@@ -174,7 +174,7 @@ _client.presence('Test-Channel1', {'state': 'busy'});
 
 ```
 
-## PubNub Events
+## PubNub-Events
 
 In order to build a chat service for example, the client does not only send messages but must also consume messages, be aware if the client on the other end disconnected, status.
 
