@@ -27,7 +27,7 @@ First, in the pubspec.yaml file, import the plugin as:
 
 ```yaml
 dependencies:
-  pubnub_flutter:: ^0.0.1  #latest version
+  flutter_pubnub: ^0.0.1  #latest version
 ```
 
 ## Easy setup
