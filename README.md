@@ -17,6 +17,21 @@ This plugin is not provided nor supported by PubNub. It was implemented part of 
 
 * The plugin can only be used on iOS and Android and not supported on Flutter Web. In order to support Web, Desktop and mobile platforms, PubNub would have to create a pure Dart plugin that directly accesses their low level REST API.
 
+## Roadmap
+
+The plugin does not cover all functionalities offered by PubNub but is functional for implementing already complex real time messaging apps on iOS and Android.
+We have items we will be working on soon:
+
+PNConfig features:
+- cipher key
+- custom origin
+- secret key
+
+PubNub features:
+- array of channels as argument
+- channels group support
+- history
+
 ## Getting Started
 
 The plugin follows as much as possible the naming conventions PubNub exposes via their respective iOS and Android SDK.
