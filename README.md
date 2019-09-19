@@ -15,7 +15,7 @@ This plugin is not provided nor supported by PubNub. It was implemented part of 
 
 **IMPORTANT NOTES**:
 
-* The plugin can only be used on iOS and Android and not supported on Flutter Web. In order to support Web, Desktop and mobile platforms, PubNub would have to create a Flutter plugin that directly accesses their low level REST API.
+* The plugin can only be used on iOS and Android and not supported on Flutter Web. In order to support Web, Desktop and mobile platforms, PubNub would have to create a pure Dart plugin that directly accesses their low level REST API.
 
 ## Getting Started
 
