@@ -9,8 +9,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _firstUserClient =
-      PubNub(PubNubConfig('pub-c-92a95906-a422-4392-b881-577efce3f29d', 'sub-c-b91eca9c-65ed-11e9-b4da-e22b76110819'));
+  final _firstUserClient = PubNub(PubNubConfig('first_user_publish_key', 'first_user_subscribe_key'));
   final _secondUserClient = PubNub(PubNubConfig('second_user_publish_key', 'second_user_subscribe_key',
       presenceTimeout: 120,
       uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007',
