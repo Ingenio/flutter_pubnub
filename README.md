@@ -51,10 +51,10 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 ## Table of contents
 
 * [Creating one or more clients](#Clients)
-* [Subscribe to a channel](#Channels)
+* [Channel subscription and unsubscription](#Channels)
 * [Publishing to a channel](#Publishing)
 * [Handle Presence](#Presence)
-* [Subscribe to PubNub events](#Subscriptions)
+* [Subscribe to PubNub events](#PubNub Events)
 * [Cleanup](#Cleanup)
 
 ## Clients
@@ -174,7 +174,7 @@ _client.presence('Test-Channel1', {'state': 'busy'});
 
 ```
 
-## Subscriptions
+## PubNub Events
 
 In order to build a chat service for example, the client does not only send messages but must also consume messages, be aware if the client on the other end disconnected, status.
 
