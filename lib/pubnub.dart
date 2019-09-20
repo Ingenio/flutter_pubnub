@@ -25,7 +25,7 @@ class PubNubConfig {
   final String filter;
 
   Map<String, dynamic> toMap() {
-    Map args = {
+    Map<String, dynamic> args = {
       _clientIdKey: _uuid.v4(options: {'rng': UuidUtil.cryptoRNG}),
       _publishKey: publishKey,
       _subscribeKey: subscribeKey,
