@@ -36,14 +36,6 @@ PubNub features:
 
 The plugin follows as much as possible the naming conventions PubNub exposes via their respective iOS and Android SDK.
 
-First, in the pubspec.yaml file, import the plugin as:
-
-### Add dependency
-
-```yaml
-dependencies:
-  flutter_pubnub: ^0.0.1  #latest version
-```
 
 ## Easy setup
 

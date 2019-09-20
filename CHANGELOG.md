@@ -5,3 +5,7 @@
 ## [0.1.0]
 
 * Refactored code so spread operators are not used
+
+## [0.1.1]
+
+* Documentation tweaks
