@@ -4,123 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:uuid/uuid_util.dart';
 
-/// PubNub Plugin. This plugin is not intended to implement all PubNub functionalities but rather take a minimal approach
-/// for solving most general use cases
-/// Main areas covered by the plugin are
-/// - Instantiate the plugin passing the required PubNub authentication information
-/// - Pass a filter expression when instantiating the plugin
-/// - Subscribe to one or more channels
-/// - Unsubscribe from one channel or all channels
-/// - Publish a message to a channel
-/// - Retrieve UUID if was not set during the plugin instantiation
-/// {@tool sample}
-///
-/// Instantiate plugin without a filter expression:
-///
-/// ```dart
-/// _pubNubFlutter = PubNubFlutter('pub-c-2d1121f9-06c1-4413-8d2e-0000000000',
-///        'sub-c-324ae474-ecfd-11e8-91a4-00000000000',
-///        uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007');
-/// ```
-/// Instantiate plugin with a filter expression:
-///
-/// ```dart
-/// _pubNubFlutter = PubNubFlutter('pub-c-2d1121f9-06c1-4413-8d2e-0000000000',
-///        'sub-c-324ae474-ecfd-11e8-91a4-00000000000',
-///        uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007',
-///        filter: 'uuid != "127c1ab5-fc7f-4c46-8460-3207b6782007"');
-/// ```
-///
-/// It is also possible to pass a PubNub authKey if such mechanism is used on the PubNub side for additional security.
-///
-/// ```dart
-/// _pubNubFlutter = PubNubFlutter('pub-c-2d1121f9-06c1-4413-8d2e-0000000000',
-///        'sub-c-324ae474-ecfd-11e8-91a4-00000000000',
-///        authKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-///        uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007');
-/// ```
-///
-/// Finally, it is also possible to set a presence timeout value in order to be informed of possible/unexpected disconnections:
-///
-/// ```dart
-/// _pubNubFlutter = PubNubFlutter('pub-c-2d1121f9-06c1-4413-8d2e-0000000000',
-///        'sub-c-324ae474-ecfd-11e8-91a4-00000000000',
-///        presenceTimeOut: 120,
-///        uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007');
-/// ```
-///
-/// Subscribe to a channel:
-///
-/// ``` dart
-/// _pubNubFlutter.subscribe(['test_channel']);
-/// ```
-///
-/// Unsubscribe from a channel:
-///
-/// ``` dart
-/// _pubNubFlutter.unsubscribe(channel: 'test_channel');
-/// ```
-///
-///  Unsubscribe from all channels:
-///
-/// ``` dart
-/// _pubNubFlutter.unsubscribeAll();
-/// ```
-///
-/// Publish a message to a channel:
-///
-/// ``` dart
-///    _pubNubFlutter.publish(
-///                            {'message': 'Hello World'},
-///                            'test_channel',
-///                          );
-/// ```
-///
-/// Publish a message to a channel passing metadata optional filter expression acts upon:
-///
-/// ``` dart
-///    _pubNubFlutter.publish(
-///                            {'message': 'Hello World'},
-///                            'test_channel',
-///                            metadata: {
-///                             'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'
-///                           }
-///                          );
-/// ```
-///
-/// Listen for Messages:
-///
-/// ``` dart
-/// _pubNubFlutter.onMessageReceived
-///        .listen((message) => print('Message:$message'));
-/// ```
-///
-/// Listen for Status:
-///
-/// ``` dart
-///  _pubNubFlutter.onStatusReceived
-///        .listen((status) => print('Status:${status.toString()}'));
-/// ```
-/// Listen to Presence:
-///
-/// ``` dart
-/// _pubNubFlutter.onPresenceReceived
-///        .listen((presence) => print('Presence:${presence.toString()}'));
-/// ```
-///
-/// Listen for Errors:
-///
-/// ``` dart
-/// _pubNubFlutter.onErrorReceived.listen((error) => print('Error:$error'));
-/// ```
-///
-///  {@end-tool}
-///
-///
-///
-///
-///
-
 const _clientIdKey = 'clientId';
 
 class PubNubConfig {
@@ -141,15 +24,22 @@ class PubNubConfig {
   final String uuid;
   final String filter;
 
-  Map<String, dynamic> toMap() => {
-        _clientIdKey: _uuid.v4(options: {'rng': UuidUtil.cryptoRNG}),
-        _publishKey: publishKey,
-        _subscribeKey: subscribeKey,
-        _uuidKey: uuid,
-        _filterKey: filter,
-        _authKey: authKey,
-        if (presenceTimeout != null) _presenceTimeoutKey: presenceTimeout
-      };
+  Map<String, dynamic> toMap() {
+    Map args = {
+      _clientIdKey: _uuid.v4(options: {'rng': UuidUtil.cryptoRNG}),
+      _publishKey: publishKey,
+      _subscribeKey: subscribeKey,
+      _uuidKey: uuid,
+      _filterKey: filter,
+      _authKey: authKey
+    };
+
+    if (presenceTimeout != null) {
+      args[_presenceTimeoutKey] = presenceTimeout;
+    }
+
+    return args;
+  }
 }
 
 class PubNub {
@@ -216,8 +106,13 @@ class PubNub {
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
   Future<void> publish(String channel, Map message, {Map metadata}) async {
-    return await _invokeMethod(
-        _publishMethod, {_messageKey: message, _channelKey: channel, if (metadata != null) _metadataKey: metadata});
+    Map args = {_messageKey: message, _channelKey: channel};
+
+    if (metadata != null) {
+      args[_metadataKey] = metadata;
+    }
+
+    return await _invokeMethod(_publishMethod, args);
   }
 
   /// Unsubscribes from a single channel
@@ -266,8 +161,10 @@ class PubNub {
 
   /// Fires whenever a status is received.
   Map _parseStatus(Map status) {
-    status[_statusCategoryKey] = PNStatusCategory.values[status[_statusCategoryKey] ?? 0];
-    status[_statusOperationKey] = PNOperationType.values[status[_statusOperationKey] ?? 0];
+    status[_statusCategoryKey] =
+        PNStatusCategory.values[status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory];
+    status[_statusOperationKey] =
+        PNOperationType.values[status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation];
     return status;
   }
 
@@ -278,7 +175,7 @@ class PubNub {
 
   /// Fires whenever a PubNub error is received
   Map _parseError(Map error) {
-    error[_errorOperationKey] = PNOperationType.values[error[_errorOperationKey] ?? 0];
+    error[_errorOperationKey] = PNOperationType.values[error[_errorOperationKey] ?? PNOperationType.PNUnknownOperation];
     return error;
   }
 
