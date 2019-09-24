@@ -170,13 +170,13 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 
 - (id) handleUnsubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId {
-    NSString *channel = call.arguments[CHANNEL_KEY];
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     
     PubNub *client = [self getClient:clientId call:call];
     
-    if((id)channel != [NSNull null] && channel && channel.length > 0) {
-        NSLog(@"Unsubscribing from channel: %@", channel);
-        [client unsubscribeFromChannels:@[channel] withPresence:NO];
+     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        NSLog(@"Unsubscribing from channels: %@", channels);
+        [client unsubscribeFromChannels:channels withPresence:NO];
     } else {
         NSLog(@"Unsubscribing ALL Channels");
         [client unsubscribeFromAll];
@@ -203,12 +203,12 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 
 - (id) handlePublish:(FlutterMethodCall*)call clientId:(NSString *)clientId {
-    NSString *channel = call.arguments[CHANNEL_KEY];
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary *message = call.arguments[MESSAGE_KEY];
     NSDictionary *metadata = call.arguments[METADATA_KEY];
     
-    if((id)channel == [NSNull null] || channel == NULL || channel.length == 0) {
-        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Publish channel can't be null or empty" userInfo:nil];
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Publish channels can't be null or empty" userInfo:nil];
     }
     
     if((id)message == [NSNull null] || message == NULL || [message count] == 0) {
@@ -218,20 +218,23 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     PubNub *client = [self getClient:clientId call:call];
     
     __weak __typeof(self) weakSelf = self;
-    [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
-        __strong __typeof(self) strongSelf = weakSelf;
-        [strongSelf handleStatus:status clientId:clientId];
-    }];
+    
+    for(NSString *channel in channels) {
+        [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            [strongSelf handleStatus:status clientId:clientId];
+        }];
+    }
     
     return NULL;
 }
 
 - (id) handlePresence:(FlutterMethodCall*)call clientId:(NSString *)clientId {
-    NSString *channel = call.arguments[CHANNEL_KEY];
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary<NSString*, NSString*> *state = call.arguments[STATE_KEY];
     
-    if((id)channel == [NSNull null] || channel == NULL || channel.length == 0) {
-        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Presence channel can't be null or empty" userInfo:nil];
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Presence channels can't be null or empty" userInfo:nil];
     }
     
     if((id)state == [NSNull null] || state == NULL || [state count] == 0) {
@@ -240,8 +243,9 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     PubNub *client = [self getClient:clientId call:call];
     
-    [client setState: state forUUID:client.uuid onChannel: channel
-      withCompletion:^(PNClientStateUpdateStatus *status) {
+    for(NSString *channel in channels) {
+        [client setState: state forUUID:client.uuid onChannel: channel
+          withCompletion:^(PNClientStateUpdateStatus *status) {
           
           if (status.isError) {
               NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
@@ -250,6 +254,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
               [self.statusStreamHandler sendStatus:status clientId:clientId];
           }
       }];
+    }
     
     return NULL;
 }
