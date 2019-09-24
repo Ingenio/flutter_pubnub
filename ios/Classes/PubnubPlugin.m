@@ -148,7 +148,6 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     PNConfiguration *config =
     [PNConfiguration configurationWithPublishKey:publishKey
                                     subscribeKey:subscribeKey];
-    config.stripMobilePayload = NO;
     
     if(uuid != [NSNull null]) {
         NSLog(@"configFromCall: setting uuid");
