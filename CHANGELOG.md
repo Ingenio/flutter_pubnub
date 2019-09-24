@@ -9,3 +9,7 @@
 ## [0.1.1]
 
 * Documentation tweaks
+
+## [0.1.2]
+
+* Breaking changes: Now publish, presence and unsubscribe take an array of channels

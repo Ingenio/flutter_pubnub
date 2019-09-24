@@ -9,8 +9,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _firstUserClient = PubNub(PubNubConfig('first_user_publish_key', 'first_user_subscribe_key'));
-  final _secondUserClient = PubNub(PubNubConfig('second_user_publish_key', 'second_user_subscribe_key',
+  final _firstUserClient = PubNub(PubNubConfig('pub-c-xxxx', 'sub-cxxx'));
+  final _secondUserClient = PubNub(PubNubConfig('pub-c-yyyy', 'sub-cyyy',
       presenceTimeout: 120,
       uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007',
       filter: 'uuid != "127c1ab5-fc7f-4c46-8460-3207b6782007"'));
@@ -55,17 +55,17 @@ class _MyAppState extends State<MyApp> {
                 FlatButton(
                     color: Colors.black12,
                     onPressed: () {
-                      _firstUserClient.subscribe(['Channel']);
+                      _firstUserClient.subscribe(['Channel', 'Channel2']);
                       _secondUserClient.subscribe(['Channel']);
                     },
                     child: Text('Subscribe')),
                 FlatButton(
                     color: Colors.black12,
                     onPressed: () {
-                      _firstUserClient.publish(['Channel'], {'message': 'Hello World!'});
-                      _secondUserClient.publish(['Channel'], {'message': 'Hello First User!'},
-                          metadata: {'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'});
-                      _firstUserClient.presence(['Channel'], {'state': 'AFK'});
+                      _firstUserClient.publish(['Channel', 'Channel2'], {'message': 'Hello World!'});
+                      //_secondUserClient.publish(['Channel'], {'message': 'Hello First User!'},
+                      //   metadata: {'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'});
+                      // _firstUserClient.presence(['Channel'], {'state': 'AFK'});
                     },
                     child: Text('Send Message'))
               ])
