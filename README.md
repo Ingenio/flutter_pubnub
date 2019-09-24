@@ -59,7 +59,7 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 
 * [Creating one or more clients](#Creating-one-or-more-clients)
 * [Subscribe to channels and unsubscribe from channels](#Subscribe-to-channels-and-unsubscribe-from-channels)
-* [Publishing to a channel](#Publishing-to-a-channel)
+* [Publishing to channels](#Publishing-to-channels)
 * [Handle presence](#Handle-presence)
 * [Subscribe to PubNub events](#Subscribe-to-PubNub-Events)
 * [Cleanup](#Cleanup)
@@ -150,7 +150,7 @@ A client can subscribe to one or many channels. It can also unsubscribe from one
 ```
 
 
-## Publishing to a channel
+## Publishing to channels
 
 A client can publish messages to one or many channels
 
