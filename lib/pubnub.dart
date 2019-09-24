@@ -63,7 +63,6 @@ class PubNub {
   static const _channelsKey = 'channels';
   static const _stateKey = 'state';
   static const _messageKey = 'message';
-  static const _channelKey = 'channel';
   static const _metadataKey = 'metadata';
 
   static const _statusCategoryKey = 'category';
