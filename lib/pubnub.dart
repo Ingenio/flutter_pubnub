@@ -15,8 +15,7 @@ class PubNubConfig {
   static final _filterKey = 'filter';
   static final _uuid = Uuid();
 
-  PubNubConfig(this.publishKey, this.subscribeKey,
-      {this.authKey, this.presenceTimeout, this.uuid, this.filter});
+  PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTimeout, this.uuid, this.filter});
 
   final String publishKey;
   final String subscribeKey;
@@ -74,14 +73,10 @@ class PubNub {
 
   static final clients = Map<String, PubNub>();
 
-  static final _messageChannelStream =
-      const EventChannel(_messageChannelName).receiveBroadcastStream();
-  static final _statusChannelStream =
-      const EventChannel(_statusChannelName).receiveBroadcastStream();
-  static final _presenceChannelStream =
-      const EventChannel(_presenceChannelName).receiveBroadcastStream();
-  static final _errorChannelStream =
-      const EventChannel(_errorChannelName).receiveBroadcastStream();
+  static final _messageChannelStream = const EventChannel(_messageChannelName).receiveBroadcastStream();
+  static final _statusChannelStream = const EventChannel(_statusChannelName).receiveBroadcastStream();
+  static final _presenceChannelStream = const EventChannel(_presenceChannelName).receiveBroadcastStream();
+  static final _errorChannelStream = const EventChannel(_errorChannelName).receiveBroadcastStream();
 
   /// Create the plugin, UUID and filter expressions are optional and can be used for tracking purposes and filtering purposes, for instance can disable getting messages on the same UUID.
   PubNub(PubNubConfig config) : this.config = config.toMap() {
@@ -105,14 +100,13 @@ class PubNub {
   }
 
   /// Set Presence State on a specified channel
-  Future<void> presence(String channel, Map<String, String> state) async {
-    return await _invokeMethod(
-        _presenceMethod, {_stateKey: state, _channelKey: channel});
+  Future<void> presence(List<String> channels, Map<String, String> state) async {
+    return await _invokeMethod(_presenceMethod, {_stateKey: state, _channelsKey: channels});
   }
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
-  Future<void> publish(String channel, Map message, {Map metadata}) async {
-    Map args = {_messageKey: message, _channelKey: channel};
+  Future<void> publish(List<String> channels, Map message, {Map metadata}) async {
+    Map args = {_messageKey: message, _channelsKey: channels};
 
     if (metadata != null) {
       args[_metadataKey] = metadata;
@@ -122,8 +116,8 @@ class PubNub {
   }
 
   /// Unsubscribes from a single channel
-  Future<void> unsubscribe(String channel) async {
-    return await _invokeMethod(_unsubscribeMethod, {_channelKey: channel});
+  Future<void> unsubscribe(List<String> channels) async {
+    return await _invokeMethod(_unsubscribeMethod, {_channelsKey: channels});
   }
 
   /// Dispose/destroy pubnub clients
@@ -143,43 +137,34 @@ class PubNub {
     return await _invokeMethod(_uuidMethod);
   }
 
-  bool _clientFilter(dynamic event) =>
-      event[_clientIdKey] == config[_clientIdKey];
+  bool _clientFilter(dynamic event) => event[_clientIdKey] == config[_clientIdKey];
 
   /// Fires whenever the a message is received.
   Stream<Map> get onMessageReceived {
-    return _messageChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parseMessage(event));
+    return _messageChannelStream.where(_clientFilter).map((dynamic event) => _parseMessage(event));
   }
 
   /// Fires whenever the status changes.
   Stream<Map> get onStatusReceived {
-    return _statusChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parseStatus(event));
+    return _statusChannelStream.where(_clientFilter).map((dynamic event) => _parseStatus(event));
   }
 
   /// Fires whenever the presence changes.
   Stream<Map> get onPresenceReceived {
-    return _presenceChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parsePresence(event));
+    return _presenceChannelStream.where(_clientFilter).map((dynamic event) => _parsePresence(event));
   }
 
   /// Fires whenever an error is received.
   Stream<Map> get onErrorReceived {
-    return _errorChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parseError(event));
+    return _errorChannelStream.where(_clientFilter).map((dynamic event) => _parseError(event));
   }
 
   /// Fires whenever a status is received.
   Map _parseStatus(Map status) {
-    status[_statusCategoryKey] = PNStatusCategory.values[
-        status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory];
-    status[_statusOperationKey] = PNOperationType.values[
-        status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation];
+    status[_statusCategoryKey] =
+        PNStatusCategory.values[status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory];
+    status[_statusOperationKey] =
+        PNOperationType.values[status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation];
     return status;
   }
 
@@ -190,8 +175,7 @@ class PubNub {
 
   /// Fires whenever a PubNub error is received
   Map _parseError(Map error) {
-    error[_errorOperationKey] = PNOperationType.values[
-        error[_errorOperationKey] ?? PNOperationType.PNUnknownOperation];
+    error[_errorOperationKey] = PNOperationType.values[error[_errorOperationKey] ?? PNOperationType.PNUnknownOperation];
     return error;
   }
 

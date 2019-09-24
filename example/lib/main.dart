@@ -48,8 +48,8 @@ class _MyAppState extends State<MyApp> {
                 FlatButton(
                     color: Colors.black12,
                     onPressed: () {
-                      _firstUserClient.unsubscribe('Channel');
-                      _secondUserClient.unsubscribe('Channel');
+                      _firstUserClient.unsubscribe(['Channel']);
+                      _secondUserClient.unsubscribe(['Channel']);
                     },
                     child: Text('Unsubscribe')),
                 FlatButton(
@@ -62,10 +62,10 @@ class _MyAppState extends State<MyApp> {
                 FlatButton(
                     color: Colors.black12,
                     onPressed: () {
-                      _firstUserClient.publish('Channel', {'message': 'Hello World!'});
-                      _secondUserClient.publish('Channel', {'message': 'Hello First User!'},
+                      _firstUserClient.publish(['Channel'], {'message': 'Hello World!'});
+                      _secondUserClient.publish(['Channel'], {'message': 'Hello First User!'},
                           metadata: {'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'});
-                      _firstUserClient.presence('Channel', {'state': 'AFK'});
+                      _firstUserClient.presence(['Channel'], {'state': 'AFK'});
                     },
                     child: Text('Send Message'))
               ])

@@ -265,16 +265,16 @@ public class PubnubPlugin implements MethodCallHandler {
 
   private void handlePresence(final String clientId, final MethodCall call, Result result) {
     Map<String, String> state = call.argument(STATE_KEY);
-    String channel = call.argument(CHANNEL_KEY);
+    List<String> channels = call.argument(CHANNELS_KEY);
     PubNub client = getClient(clientId, call);
     if (state == null || state.isEmpty()) {
       throw new IllegalArgumentException("Presence state can't be null or empty");
     }
-    if (channel == null || channel.isEmpty()) {
-      throw new IllegalArgumentException("Presence channel can't be null or empty");
+    if (channels == null || channels.isEmpty()) {
+      throw new IllegalArgumentException("Presence channels can't be null or empty");
     }
     System.out.println("SET PRESENCE STATE FOR CLIENT: " + clientId);
-    client.setPresenceState().channels(Collections.singletonList(channel)).state(state).async(new PNCallback<PNSetStateResult>() {
+    client.setPresenceState().channels(channels).state(state).async(new PNCallback<PNSetStateResult>() {
       @Override
       public void onResponse(final PNSetStateResult result, PNStatus status) {
         handleStatus(clientId, status);
@@ -299,20 +299,20 @@ public class PubnubPlugin implements MethodCallHandler {
   }
 
   private void handleUnsubscribe(final String clientId, MethodCall call, Result result) {
-    String channel = call.argument(CHANNEL_KEY);
+    List<String> channels = call.argument(CHANNELS_KEY);
     PubNub client = getClient(clientId, call);
-    if (channel == null || channel.isEmpty()) {
+    if (channels == null || channels.isEmpty()) {
       client.unsubscribeAll();
     } else {
-      client.unsubscribe().channels(Collections.singletonList(channel)).execute();
+      client.unsubscribe().channels(channels).execute();
     }
     result.success(true);
   }
 
   private void handlePublish(final String clientId, MethodCall call, Result result) {
-    String channel = call.argument(CHANNEL_KEY);
-    if (channel == null || channel.isEmpty()) {
-      throw new IllegalArgumentException("Publish channel can't be null or empty");
+    List<String> channels = call.argument(CHANNELS_KEY);
+    if (channels == null || channels.isEmpty()) {
+      throw new IllegalArgumentException("Publish channels can't be null or empty");
     }
     Map message = call.argument(MESSAGE_KEY);
     if (message == null || message.isEmpty()) {
@@ -320,12 +320,17 @@ public class PubnubPlugin implements MethodCallHandler {
     }
     Map metadata = call.argument(METADATA_KEY);
     PubNub client = getClient(clientId, call);
-    client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
-      @Override
-      public void onResponse(PNPublishResult result, PNStatus status) {
-        handleStatus(clientId, status);
-      }
-    });
+
+    for(String channel : channels) {
+      client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
+        @Override
+        public void onResponse(PNPublishResult result, PNStatus status) {
+          handleStatus(clientId, status);
+        }
+      });
+    }
+
+
     result.success(true);
   }
 
