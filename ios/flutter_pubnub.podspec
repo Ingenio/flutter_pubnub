@@ -15,7 +15,7 @@ A new flutter plugin project.
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-  s.dependency 'PubNub','~> 4.8.7'
+  s.dependency 'PubNub','~> 4.10.1'
   s.ios.deployment_target = '8.0'
 end
 
