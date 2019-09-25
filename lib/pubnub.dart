@@ -178,9 +178,9 @@ class PubNub {
   /// Fires whenever a status is received.
   Map _parseStatus(Map status) {
     status[_statusCategoryKey] = PNStatusCategory.values[
-        status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory];
+        status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory.index];
     status[_statusOperationKey] = PNOperationType.values[
-        status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation];
+        status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation.index];
     return status;
   }
 
@@ -192,7 +192,7 @@ class PubNub {
   /// Fires whenever a PubNub error is received
   Map _parseError(Map error) {
     error[_errorOperationKey] = PNOperationType.values[
-        error[_errorOperationKey] ?? PNOperationType.PNUnknownOperation];
+        error[_errorOperationKey] ?? PNOperationType.PNUnknownOperation.index];
     return error;
   }
 
