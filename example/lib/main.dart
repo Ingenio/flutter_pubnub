@@ -9,8 +9,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _firstUserClient = PubNub(PubNubConfig('pub-c-xxxx', 'sub-cxxx'));
-  final _secondUserClient = PubNub(PubNubConfig('pub-c-yyyy', 'sub-cyyy',
+  final _firstUserClient = PubNub(PubNubConfig(
+      'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
+      secretKey: 'sec-c-MDMyMDU0ODMtZDE2Zi00NWRmLTk4YzItZDg1ODFkNzkzMTFh'));
+  final _secondUserClient = PubNub(PubNubConfig(
+      'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
       presenceTimeout: 120,
       uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007',
       filter: 'uuid != "127c1ab5-fc7f-4c46-8460-3207b6782007"'));
@@ -37,40 +40,51 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
         home: Scaffold(
-          appBar: AppBar(
-            title: const Text('PubNub'),
-          ),
-          body: Center(
-              child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: <Widget>[
-                FlatButton(
-                    color: Colors.black12,
-                    onPressed: () {
-                      _firstUserClient.unsubscribe(['Channel']);
-                      _secondUserClient.unsubscribe(['Channel']);
-                    },
-                    child: Text('Unsubscribe')),
-                FlatButton(
-                    color: Colors.black12,
-                    onPressed: () {
-                      _firstUserClient.subscribe(['Channel', 'Channel2']);
-                      _secondUserClient.subscribe(['Channel']);
-                    },
-                    child: Text('Subscribe')),
-                FlatButton(
-                    color: Colors.black12,
-                    onPressed: () {
-                      _firstUserClient.publish(['Channel', 'Channel2'], {'message': 'Hello World!'});
-                      //_secondUserClient.publish(['Channel'], {'message': 'Hello First User!'},
-                      //   metadata: {'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'});
-                      // _firstUserClient.presence(['Channel'], {'state': 'AFK'});
-                    },
-                    child: Text('Send Message'))
-              ])
-            ],
-          )),
-        ),
+            appBar: AppBar(
+              title: const Text('PubNub'),
+            ),
+            body: Center(
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+                Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: <Widget>[
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.unsubscribe(['Channel']);
+                        _secondUserClient.unsubscribe(['Channel']);
+                      },
+                      child: Text('Unsubscribe')),
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.subscribe(['Channel', 'Channel2']);
+                        _secondUserClient.subscribe(['Channel']);
+                      },
+                      child: Text('Subscribe')),
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.publish(['Channel', 'Channel2'], {'message': 'Hello World!'});
+                        //_secondUserClient.publish(['Channel'], {'message': 'Hello First User!'},
+                        //   metadata: {'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'});
+                        // _firstUserClient.presence(['Channel'], {'state': 'AFK'});
+                      },
+                      child: Text('Send Message')),
+                ]),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: <Widget>[
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.addChannelsToChannelGroup('Group1', ['Channel', ' Channel2']);
+//                        _firstUserClient.listChannelsForChannelGroup('Group1').then((channels) {
+//                          print("Channels in Group 1: $channels");
+//                        });
+                        //_secondUserClient.publish(['Channel'], {'message': 'Hello First User!'},
+                        //   metadata: {'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'});
+                        // _firstUserClient.presence(['Channel'], {'state': 'AFK'});
+                      },
+                      child: Text('Channel Group')),
+                ])
+              ]),
+            )),
       );
 }

@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.pubnub.api.PNConfiguration;
 import com.pubnub.api.PubNub;
+import com.pubnub.api.PubNubException;
 import com.pubnub.api.callbacks.PNCallback;
 import com.pubnub.api.callbacks.SubscribeCallback;
 import com.pubnub.api.enums.PNOperationType;
@@ -15,10 +16,13 @@ import com.pubnub.api.enums.PNReconnectionPolicy;
 import com.pubnub.api.enums.PNStatusCategory;
 import com.pubnub.api.models.consumer.PNPublishResult;
 import com.pubnub.api.models.consumer.PNStatus;
+import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsAddChannelResult;
+import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsAllChannelsResult;
 import com.pubnub.api.models.consumer.presence.PNSetStateResult;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -51,6 +55,13 @@ public class PubnubPlugin implements MethodCallHandler {
   private static final String DISPOSE_METHOD = "dispose";
   private static final String UUID_METHOD = "uuid";
 
+  private static final String ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = "addChannelsToChannelGroup";
+  private static final String LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = "listChannelsForChannelGroup";
+  private static final String REMOVE_CHANNELS_FOR_CHANNEL_GROUP_METHOD = "removeChannelsFromChannelGroup";
+  private static final String DELETE_CHANNEL_GROUP_METHOD = "deleteChannelGroup";
+  private static final String SUBSCRIBE_TO_CHANNEL_GROUP_METHOD = "subscribeToChannelGroups";
+  private static final String UNSUBSCRIBE_FROM_CHANNEL_GROUP_METHOD = "unsubscribeFromChannelGroups";
+
   private static final String CLIENT_ID_KEY = "clientId";
   private static final String CHANNELS_KEY = "channels";
   private static final String STATE_KEY = "state";
@@ -60,6 +71,7 @@ public class PubnubPlugin implements MethodCallHandler {
   private static final String PUBLISH_CONFIG_KEY = "publishKey";
   private static final String SUBSCRIBE_CONFIG_KEY = "subscribeKey";
   private static final String AUTH_CONFIG_KEY = "authKey";
+  private static final String SECRET_CONFIG_KEY = "secretKey";
   private static final String PRESENCE_TIMEOUT_KEY = "presenceTimeout";
   private static final String UUID_KEY = "uuid";
   private static final String FILTER_KEY = "filter";
@@ -67,6 +79,9 @@ public class PubnubPlugin implements MethodCallHandler {
   private static final String ERROR_KEY = "error";
   private static final String EVENT_KEY = "event";
   private static final String OCCUPANCY_KEY = "occupancy";
+
+  private static final String CHANNEL_GROUP_KEY = "channelGroup";
+  private static final String CHANNEL_GROUPS_KEY = "channelGroups";
 
   private static  final Map<PNStatusCategory, Integer> categoriesAsNumber =
           new EnumMap<PNStatusCategory, Integer>(PNStatusCategory.class) {{
@@ -192,10 +207,145 @@ public class PubnubPlugin implements MethodCallHandler {
         handleUuid(clientId, call, result);
         break;
 
+      case ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD:
+        handleAddChannelsToChannelGroup(clientId, call, result);
+        break;
+      case LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD:
+        handleListChannelsForChannelGroup(clientId, call, result);
+        break;
+      case REMOVE_CHANNELS_FOR_CHANNEL_GROUP_METHOD:
+        handleRemoveChannelsFromChannelGroup(clientId, call, result);
+        break;
+      case DELETE_CHANNEL_GROUP_METHOD:
+        handleDeleteChannelGroup(clientId, call, result);
+        break;
+      case SUBSCRIBE_TO_CHANNEL_GROUP_METHOD:
+        handleSubscribeToChannelGroups(clientId, call, result);
+        break;
+      case UNSUBSCRIBE_FROM_CHANNEL_GROUP_METHOD:
+        handleUnsubscribeFromChannelGroups(clientId, call, result);
+        break;
+
       default:
         result.notImplemented();
         break;
     }
+  }
+
+  private void handleRemoveChannelsFromChannelGroup(String clientId, MethodCall call, Result result) {
+    PubNub client = getClient(clientId, call);
+    List<String> channels = call.argument(CHANNELS_KEY);
+    String channelGroup = call.argument(CHANNEL_GROUP_KEY);
+
+    if (channels == null || channels.isEmpty()) {
+      throw new IllegalArgumentException("Channel group channels can't be null or empty");
+    }
+
+    if(channelGroup == null || channelGroup.isEmpty()) {
+      throw new IllegalArgumentException("Channel group can't be null or empty");
+    }
+
+    System.out.println("SUBSCRIBE CLIENT: " + clientId);
+
+    client.removeChannelsFromChannelGroup().channelGroup(channelGroup).channels(channels);
+    result.success(true);
+  }
+
+  private void handleAddChannelsToChannelGroup(final String clientId, MethodCall call, Result result) {
+    PubNub client = getClient(clientId, call);
+    List<String> channels = call.argument(CHANNELS_KEY);
+    String channelGroup = call.argument(CHANNEL_GROUP_KEY);
+    
+    if (channels == null || channels.isEmpty()) {
+      throw new IllegalArgumentException("Channel group channels can't be null or empty");
+    }
+
+    if(channelGroup == null || channelGroup.isEmpty()) {
+      throw new IllegalArgumentException("Channel group can't be null or empty");
+    }
+
+    System.out.println("ADD CHANNELS TO CHANNEL GROUP CLIENT: " + clientId);
+    System.out.println("CHANNEL GROUP: " + channelGroup);
+    System.out.println("CHANNELS: " + channels);
+
+      client.addChannelsToChannelGroup()
+              .channelGroup(channelGroup)
+              .channels(channels).async(new PNCallback<PNChannelGroupsAddChannelResult>() {
+        @Override
+        public void onResponse(PNChannelGroupsAddChannelResult result, PNStatus status) {
+          handleStatus(clientId, status);
+        }
+      });
+
+      result.success(true);
+  }
+
+  private void handleListChannelsForChannelGroup(String clientId, MethodCall call, Result result) {
+    PubNub client = getClient(clientId, call);
+    String channelGroup = call.argument(CHANNEL_GROUP_KEY);
+
+    if(channelGroup == null || channelGroup.isEmpty()) {
+      throw new IllegalArgumentException("Channel group can't be null or empty");
+    }
+
+    System.out.println("SUBSCRIBE CLIENT: " + clientId);
+
+    try {
+      PNChannelGroupsAllChannelsResult channels = client.listChannelsForChannelGroup().channelGroup(channelGroup).sync();
+      result.success(channels.getChannels());
+
+    } catch (PubNubException e) {
+      e.printStackTrace();
+      result.success(false);
+    }
+  }
+
+  private void handleDeleteChannelGroup(String clientId, MethodCall call, Result result) {
+    PubNub client = getClient(clientId, call);
+    String channelGroup = call.argument(CHANNEL_GROUP_KEY);
+
+    if(channelGroup == null || channelGroup.isEmpty()) {
+      throw new IllegalArgumentException("Channel group can't be null or empty");
+    }
+
+    System.out.println("SUBSCRIBE CLIENT: " + clientId);
+
+    try {
+      client.deleteChannelGroup().channelGroup(channelGroup).sync();
+      result.success(true);
+
+    } catch (PubNubException e) {
+      e.printStackTrace();
+      result.success(false);
+    }
+  }
+
+  private void handleSubscribeToChannelGroups(String clientId, MethodCall call, Result result) {
+    PubNub client = getClient(clientId, call);
+    List<String> channelGroups = call.argument(CHANNEL_GROUPS_KEY);
+
+    if(channelGroups == null || channelGroups.isEmpty()) {
+      throw new IllegalArgumentException("Channel groups can't be null or empty");
+    }
+
+    System.out.println("SUBSCRIBE CLIENT: " + clientId);
+
+    client.subscribe().channelGroups(channelGroups).execute();
+    result.success(true);
+  }
+
+  private void handleUnsubscribeFromChannelGroups(String clientId, MethodCall call, Result result) {
+    PubNub client = getClient(clientId, call);
+    List<String> channelGroups = call.argument(CHANNEL_GROUPS_KEY);
+
+    if(channelGroups == null || channelGroups.isEmpty()) {
+      throw new IllegalArgumentException("Channel groups can't be null or empty");
+    }
+
+    System.out.println("UNSUBSCRIBE CLIENT: " + clientId);
+
+    client.unsubscribe().channelGroups(channelGroups).execute();
+    result.success(true);
   }
 
   private PubNub getClient(String clientId, final MethodCall call) {
@@ -223,6 +373,7 @@ public class PubnubPlugin implements MethodCallHandler {
       throw new IllegalArgumentException("Subscribe Key can't be null");
     }
     final String authKey = call.argument(AUTH_CONFIG_KEY);
+    final String secretKey = call.argument(SECRET_CONFIG_KEY);
     final Integer presenceTimeout = call.argument(PRESENCE_TIMEOUT_KEY);
     final String uuid = call.argument(UUID_KEY);
     final String filter = call.argument(FILTER_KEY);
@@ -235,6 +386,10 @@ public class PubnubPlugin implements MethodCallHandler {
 
     if(authKey != null && !authKey.isEmpty()) {
       config.setAuthKey(authKey);
+    }
+
+    if(secretKey != null && !secretKey.isEmpty()) {
+      config.setSecretKey(secretKey);
     }
 
     if(uuid != null && !uuid.isEmpty()) {

@@ -10,17 +10,19 @@ class PubNubConfig {
   static final _publishKey = 'publishKey';
   static final _subscribeKey = 'subscribeKey';
   static final _authKey = 'authKey';
+  static final _secretKey = 'secretKey';
   static final _presenceTimeoutKey = 'presenceTimeout';
   static final _uuidKey = 'uuid';
   static final _filterKey = 'filter';
   static final _uuid = Uuid();
 
   PubNubConfig(this.publishKey, this.subscribeKey,
-      {this.authKey, this.presenceTimeout, this.uuid, this.filter});
+      {this.authKey, this.secretKey, this.presenceTimeout, this.uuid, this.filter});
 
   final String publishKey;
   final String subscribeKey;
   final String authKey;
+  final String secretKey;
   final int presenceTimeout;
   final String uuid;
   final String filter;
@@ -32,7 +34,8 @@ class PubNubConfig {
       _subscribeKey: subscribeKey,
       _uuidKey: uuid,
       _filterKey: filter,
-      _authKey: authKey
+      _authKey: authKey,
+      _secretKey: secretKey
     };
 
     if (presenceTimeout != null) {
@@ -58,9 +61,17 @@ class PubNub {
   static const _unsubscribeMethod = 'unsubscribe';
   static const _disposeMethod = 'dispose';
   static const _uuidMethod = 'uuid';
+  static const _addChannelsToChannelGroupMethod = 'addChannelsToChannelGroup';
+  static const _listChannelsForChannelGroupMethod = 'listChannelsForChannelGroup';
+  static const _removeChannelsFromChannelGroupMethod = 'removeChannelsFromChannelGroup';
+  static const _deleteChannelGroupMethod = 'deleteChannelGroup';
+  static const _subscribeToChannelGroupsMethod = 'subscribeToChannelGroups';
+  static const _unsubscribeFromChannelGroupsMethod = 'unsubscribeFromChannelGroups';
 
   // Arguments keys
   static const _channelsKey = 'channels';
+  static const _channelGroupKey = 'channelGroup';
+  static const _channelGroupsKey = 'channelGroups';
   static const _stateKey = 'state';
   static const _messageKey = 'message';
   static const _metadataKey = 'metadata';
@@ -73,14 +84,10 @@ class PubNub {
 
   static final clients = Map<String, PubNub>();
 
-  static final _messageChannelStream =
-      const EventChannel(_messageChannelName).receiveBroadcastStream();
-  static final _statusChannelStream =
-      const EventChannel(_statusChannelName).receiveBroadcastStream();
-  static final _presenceChannelStream =
-      const EventChannel(_presenceChannelName).receiveBroadcastStream();
-  static final _errorChannelStream =
-      const EventChannel(_errorChannelName).receiveBroadcastStream();
+  static final _messageChannelStream = const EventChannel(_messageChannelName).receiveBroadcastStream();
+  static final _statusChannelStream = const EventChannel(_statusChannelName).receiveBroadcastStream();
+  static final _presenceChannelStream = const EventChannel(_presenceChannelName).receiveBroadcastStream();
+  static final _errorChannelStream = const EventChannel(_errorChannelName).receiveBroadcastStream();
 
   /// Create the plugin, UUID and filter expressions are optional and can be used for tracking purposes and filtering purposes, for instance can disable getting messages on the same UUID.
   PubNub(PubNubConfig config) : this.config = config.toMap() {
@@ -104,15 +111,12 @@ class PubNub {
   }
 
   /// Set Presence State on a specified channel
-  Future<void> presence(
-      List<String> channels, Map<String, String> state) async {
-    return await _invokeMethod(
-        _presenceMethod, {_stateKey: state, _channelsKey: channels});
+  Future<void> presence(List<String> channels, Map<String, String> state) async {
+    return await _invokeMethod(_presenceMethod, {_stateKey: state, _channelsKey: channels});
   }
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
-  Future<void> publish(List<String> channels, Map message,
-      {Map metadata}) async {
+  Future<void> publish(List<String> channels, Map message, {Map metadata}) async {
     Map args = {_messageKey: message, _channelsKey: channels};
 
     if (metadata != null) {
@@ -144,43 +148,70 @@ class PubNub {
     return await _invokeMethod(_uuidMethod);
   }
 
-  bool _clientFilter(dynamic event) =>
-      event[_clientIdKey] == config[_clientIdKey];
+  // New: https://www.pubnub.com/docs/android-java/api-reference-channel-groups#removing-channels-args-1
+
+  /// Adds channels to a channel group.
+  Future<void> addChannelsToChannelGroup(String channelGroup, List<String> channels) async {
+    return await _invokeMethod(
+        _addChannelsToChannelGroupMethod, {_channelGroupKey: channelGroup, _channelsKey: channels});
+  }
+
+  ///  Lists all the channels of the channel group.
+  Future<List> listChannelsForChannelGroup(String channelGroup) async {
+    return await _invokeMethod(_listChannelsForChannelGroupMethod, {_channelGroupKey: channelGroup});
+  }
+
+  /// Removes the channels from the channel group.
+  Future<void> removeChannelsFromChannelGroup(String channelGroup, List<String> channels) async {
+    return await _invokeMethod(
+        _removeChannelsFromChannelGroupMethod, {_channelGroupKey: channelGroup, _channelsKey: channels});
+  }
+
+  /// Delete a channel group.
+  Future<void> deleteChannelGroup(String channelGroup) async {
+    return await _invokeMethod(_deleteChannelGroupMethod, {_channelGroupKey: channelGroup});
+  }
+
+  /// Subscribe to a list of channels
+  Future<void> subscribeToChannelGroups(List<String> channelGroups) async {
+    return await _invokeMethod(_subscribeToChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+  }
+
+  /// Subscribe to a list of channels
+  Future<void> unsubscribeFromChannelGroups(List<String> channelGroups) async {
+    return await _invokeMethod(_unsubscribeFromChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+  }
+
+  // End New
+
+  bool _clientFilter(dynamic event) => event[_clientIdKey] == config[_clientIdKey];
 
   /// Fires whenever the a message is received.
   Stream<Map> get onMessageReceived {
-    return _messageChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parseMessage(event));
+    return _messageChannelStream.where(_clientFilter).map((dynamic event) => _parseMessage(event));
   }
 
   /// Fires whenever the status changes.
   Stream<Map> get onStatusReceived {
-    return _statusChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parseStatus(event));
+    return _statusChannelStream.where(_clientFilter).map((dynamic event) => _parseStatus(event));
   }
 
   /// Fires whenever the presence changes.
   Stream<Map> get onPresenceReceived {
-    return _presenceChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parsePresence(event));
+    return _presenceChannelStream.where(_clientFilter).map((dynamic event) => _parsePresence(event));
   }
 
   /// Fires whenever an error is received.
   Stream<Map> get onErrorReceived {
-    return _errorChannelStream
-        .where(_clientFilter)
-        .map((dynamic event) => _parseError(event));
+    return _errorChannelStream.where(_clientFilter).map((dynamic event) => _parseError(event));
   }
 
   /// Fires whenever a status is received.
   Map _parseStatus(Map status) {
-    status[_statusCategoryKey] = PNStatusCategory.values[
-        status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory];
-    status[_statusOperationKey] = PNOperationType.values[
-        status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation];
+    status[_statusCategoryKey] =
+        PNStatusCategory.values[status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory];
+    status[_statusOperationKey] =
+        PNOperationType.values[status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation];
     return status;
   }
 
@@ -191,8 +222,7 @@ class PubNub {
 
   /// Fires whenever a PubNub error is received
   Map _parseError(Map error) {
-    error[_errorOperationKey] = PNOperationType.values[
-        error[_errorOperationKey] ?? PNOperationType.PNUnknownOperation];
+    error[_errorOperationKey] = PNOperationType.values[error[_errorOperationKey] ?? PNOperationType.PNUnknownOperation];
     return error;
   }
 
