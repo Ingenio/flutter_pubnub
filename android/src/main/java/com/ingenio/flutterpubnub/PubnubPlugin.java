@@ -18,6 +18,8 @@ import com.pubnub.api.models.consumer.PNPublishResult;
 import com.pubnub.api.models.consumer.PNStatus;
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsAddChannelResult;
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsAllChannelsResult;
+import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsDeleteGroupResult;
+import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsRemoveChannelResult;
 import com.pubnub.api.models.consumer.presence.PNSetStateResult;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
@@ -232,7 +234,7 @@ public class PubnubPlugin implements MethodCallHandler {
     }
   }
 
-  private void handleRemoveChannelsFromChannelGroup(String clientId, MethodCall call, Result result) {
+  private void handleRemoveChannelsFromChannelGroup(final String clientId, MethodCall call, final Result result) {
     PubNub client = getClient(clientId, call);
     List<String> channels = call.argument(CHANNELS_KEY);
     String channelGroup = call.argument(CHANNEL_GROUP_KEY);
@@ -247,11 +249,16 @@ public class PubnubPlugin implements MethodCallHandler {
 
     System.out.println("SUBSCRIBE CLIENT: " + clientId);
 
-    client.removeChannelsFromChannelGroup().channelGroup(channelGroup).channels(channels);
-    result.success(true);
+    client.removeChannelsFromChannelGroup().channelGroup(channelGroup).channels(channels).async(new PNCallback<PNChannelGroupsRemoveChannelResult>() {
+      @Override
+      public void onResponse(PNChannelGroupsRemoveChannelResult res, PNStatus status) {
+        result.success(!status.isError());
+        handleStatus(clientId, status);
+      }
+    });
   }
 
-  private void handleAddChannelsToChannelGroup(final String clientId, MethodCall call, Result result) {
+  private void handleAddChannelsToChannelGroup(final String clientId, MethodCall call, final Result result) {
     PubNub client = getClient(clientId, call);
     List<String> channels = call.argument(CHANNELS_KEY);
     String channelGroup = call.argument(CHANNEL_GROUP_KEY);
@@ -272,15 +279,14 @@ public class PubnubPlugin implements MethodCallHandler {
               .channelGroup(channelGroup)
               .channels(channels).async(new PNCallback<PNChannelGroupsAddChannelResult>() {
         @Override
-        public void onResponse(PNChannelGroupsAddChannelResult result, PNStatus status) {
+        public void onResponse(PNChannelGroupsAddChannelResult res, PNStatus status) {
+          result.success(!status.isError());
           handleStatus(clientId, status);
         }
       });
-
-      result.success(true);
   }
 
-  private void handleListChannelsForChannelGroup(String clientId, MethodCall call, Result result) {
+  private void handleListChannelsForChannelGroup(final String clientId, MethodCall call, final Result result) {
     PubNub client = getClient(clientId, call);
     String channelGroup = call.argument(CHANNEL_GROUP_KEY);
 
@@ -290,17 +296,17 @@ public class PubnubPlugin implements MethodCallHandler {
 
     System.out.println("SUBSCRIBE CLIENT: " + clientId);
 
-    try {
-      PNChannelGroupsAllChannelsResult channels = client.listChannelsForChannelGroup().channelGroup(channelGroup).sync();
-      result.success(channels.getChannels());
 
-    } catch (PubNubException e) {
-      e.printStackTrace();
-      result.success(false);
-    }
+      client.listChannelsForChannelGroup().channelGroup(channelGroup).async(new PNCallback<PNChannelGroupsAllChannelsResult>() {
+        @Override
+        public void onResponse(PNChannelGroupsAllChannelsResult res, PNStatus status) {
+          result.success(res.getChannels());
+          handleStatus(clientId, status);
+        }
+      });
   }
 
-  private void handleDeleteChannelGroup(String clientId, MethodCall call, Result result) {
+  private void handleDeleteChannelGroup(final String clientId, MethodCall call, final Result result) {
     PubNub client = getClient(clientId, call);
     String channelGroup = call.argument(CHANNEL_GROUP_KEY);
 
@@ -310,14 +316,13 @@ public class PubnubPlugin implements MethodCallHandler {
 
     System.out.println("SUBSCRIBE CLIENT: " + clientId);
 
-    try {
-      client.deleteChannelGroup().channelGroup(channelGroup).sync();
-      result.success(true);
-
-    } catch (PubNubException e) {
-      e.printStackTrace();
-      result.success(false);
-    }
+      client.deleteChannelGroup().channelGroup(channelGroup).async(new PNCallback<PNChannelGroupsDeleteGroupResult>() {
+        @Override
+        public void onResponse(PNChannelGroupsDeleteGroupResult res, PNStatus status) {
+          result.success(!status.isError());
+          handleStatus(clientId, status);
+        }
+      });
   }
 
   private void handleSubscribeToChannelGroups(String clientId, MethodCall call, Result result) {

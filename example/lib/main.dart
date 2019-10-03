@@ -74,16 +74,48 @@ class _MyAppState extends State<MyApp> {
                   FlatButton(
                       color: Colors.black12,
                       onPressed: () {
-                        _firstUserClient.addChannelsToChannelGroup('Group1', ['Channel', ' Channel2']);
-//                        _firstUserClient.listChannelsForChannelGroup('Group1').then((channels) {
-//                          print("Channels in Group 1: $channels");
-//                        });
-                        //_secondUserClient.publish(['Channel'], {'message': 'Hello First User!'},
-                        //   metadata: {'uuid': '127c1ab5-fc7f-4c46-8460-3207b6782007'});
-                        // _firstUserClient.presence(['Channel'], {'state': 'AFK'});
+                        _firstUserClient.addChannelsToChannelGroup('Group1', ['Channel', 'Channel2']);
                       },
-                      child: Text('Channel Group')),
-                ])
+                      child: Text('Add CG')),
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.listChannelsForChannelGroup('Group1').then((channels) {
+                          print("Channels in Group 1: $channels");
+                        });
+                      },
+                      child: Text('List CG')),
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.removeChannelsFromChannelGroup('Group1', ['Channel']).then((void arg) {
+                          _firstUserClient.listChannelsForChannelGroup('Group1').then((channels) {
+                            print("Channels in Group 1 after deletion: $channels");
+                          });
+                        });
+                      },
+                      child: Text('Remove CG')),
+                ]),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: <Widget>[
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.deleteChannelGroup('Group1');
+                      },
+                      child: Text('Delete CG')),
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.subscribeToChannelGroups(['Group1']);
+                      },
+                      child: Text('Subscribe CG')),
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.unsubscribeFromChannelGroups(['Group1']);
+                      },
+                      child: Text('Unsubscribe CG')),
+                ]),
               ]),
             )),
       );
