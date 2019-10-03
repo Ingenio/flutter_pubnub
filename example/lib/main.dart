@@ -9,9 +9,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _firstUserClient = PubNub(PubNubConfig(
-      'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
-      secretKey: 'sec-c-MDMyMDU0ODMtZDE2Zi00NWRmLTk4YzItZDg1ODFkNzkzMTFh'));
+  final _firstUserClient =
+      PubNub(PubNubConfig('pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518'));
   final _secondUserClient = PubNub(PubNubConfig(
       'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
       presenceTimeout: 120,
@@ -115,6 +114,16 @@ class _MyAppState extends State<MyApp> {
                         _firstUserClient.unsubscribeFromChannelGroups(['Group1']);
                       },
                       child: Text('Unsubscribe CG')),
+                ]),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: <Widget>[
+                  FlatButton(
+                      color: Colors.black12,
+                      onPressed: () {
+                        _firstUserClient.history('Channel', 1).then((items) {
+                          print("Last Item: $items");
+                        });
+                      },
+                      child: Text('History Last One')),
                 ]),
               ]),
             )),

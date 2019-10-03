@@ -20,10 +20,13 @@ import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsAddChannelRes
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsAllChannelsResult;
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsDeleteGroupResult;
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsRemoveChannelResult;
+import com.pubnub.api.models.consumer.history.PNHistoryItemResult;
+import com.pubnub.api.models.consumer.history.PNHistoryResult;
 import com.pubnub.api.models.consumer.presence.PNSetStateResult;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -64,6 +67,8 @@ public class PubnubPlugin implements MethodCallHandler {
   private static final String SUBSCRIBE_TO_CHANNEL_GROUP_METHOD = "subscribeToChannelGroups";
   private static final String UNSUBSCRIBE_FROM_CHANNEL_GROUP_METHOD = "unsubscribeFromChannelGroups";
 
+  private static final String HISTORY_METHOD = "history";
+
   private static final String CLIENT_ID_KEY = "clientId";
   private static final String CHANNELS_KEY = "channels";
   private static final String STATE_KEY = "state";
@@ -84,6 +89,10 @@ public class PubnubPlugin implements MethodCallHandler {
 
   private static final String CHANNEL_GROUP_KEY = "channelGroup";
   private static final String CHANNEL_GROUPS_KEY = "channelGroups";
+
+  private static final String LIMIT_KEY = "limit";
+  private static final String START_KEY = "start";
+  private static final String END_KEY = "end";
 
   private static  final Map<PNStatusCategory, Integer> categoriesAsNumber =
           new EnumMap<PNStatusCategory, Integer>(PNStatusCategory.class) {{
@@ -227,6 +236,9 @@ public class PubnubPlugin implements MethodCallHandler {
       case UNSUBSCRIBE_FROM_CHANNEL_GROUP_METHOD:
         handleUnsubscribeFromChannelGroups(clientId, call, result);
         break;
+      case HISTORY_METHOD:
+        handleHistory(clientId, call, result);
+        break;
 
       default:
         result.notImplemented();
@@ -234,8 +246,56 @@ public class PubnubPlugin implements MethodCallHandler {
     }
   }
 
-  private void handleRemoveChannelsFromChannelGroup(final String clientId, MethodCall call, final Result result) {
+  private void handleHistory(final String clientId, MethodCall call, final Result result) {
+
+    String channel = call.argument(CHANNEL_KEY);
+    Integer limit = call.argument(LIMIT_KEY);
+    Integer start = call.argument(START_KEY);
+    Integer end = call.argument(END_KEY);
+
+    if (channel == null || channel.isEmpty()) {
+      throw new IllegalArgumentException("Channel can't be null or empty");
+    }
+
+    if (limit == null || limit == 0) {
+      throw new IllegalArgumentException("Limit can't be null or 0");
+    }
+
     PubNub client = getClient(clientId, call);
+    System.out.println("SUBSCRIBE CLIENT: " + clientId);
+
+    client.history()
+            .channel(channel)
+            .start(start != null ? start.longValue() : null)
+            .end(end != null ? end.longValue() : null)
+            .count(limit)
+            .includeTimetoken(true)
+            .async(new PNCallback<PNHistoryResult>() {
+              @Override
+              public void onResponse(PNHistoryResult res, PNStatus status) {
+
+                if(status != null) {
+                  handleStatus(clientId, status);
+                }
+
+                List<String> items = new ArrayList<>();
+
+                if(res != null) {
+                  for (PNHistoryItemResult item : res.getMessages()) {
+                    Map map = new HashMap<String, Object>();
+                    String message = "{message: " +  item.getEntry().toString() + ", timetoken: " + item.getTimetoken() + "}";
+
+                    items.add(message); // returns something like:
+                  }
+                }
+
+                result.success(items);
+              }
+            });
+  }
+
+  private void handleRemoveChannelsFromChannelGroup(final String clientId, MethodCall call, final Result result) {
+
     List<String> channels = call.argument(CHANNELS_KEY);
     String channelGroup = call.argument(CHANNEL_GROUP_KEY);
 
@@ -247,13 +307,17 @@ public class PubnubPlugin implements MethodCallHandler {
       throw new IllegalArgumentException("Channel group can't be null or empty");
     }
 
+    PubNub client = getClient(clientId, call);
+
     System.out.println("SUBSCRIBE CLIENT: " + clientId);
 
     client.removeChannelsFromChannelGroup().channelGroup(channelGroup).channels(channels).async(new PNCallback<PNChannelGroupsRemoveChannelResult>() {
       @Override
       public void onResponse(PNChannelGroupsRemoveChannelResult res, PNStatus status) {
         result.success(!status.isError());
-        handleStatus(clientId, status);
+        if(status != null) {
+          handleStatus(clientId, status);
+        }
       }
     });
   }
@@ -281,7 +345,9 @@ public class PubnubPlugin implements MethodCallHandler {
         @Override
         public void onResponse(PNChannelGroupsAddChannelResult res, PNStatus status) {
           result.success(!status.isError());
-          handleStatus(clientId, status);
+          if(status != null) {
+            handleStatus(clientId, status);
+          }
         }
       });
   }
@@ -301,7 +367,9 @@ public class PubnubPlugin implements MethodCallHandler {
         @Override
         public void onResponse(PNChannelGroupsAllChannelsResult res, PNStatus status) {
           result.success(res.getChannels());
-          handleStatus(clientId, status);
+          if(status != null) {
+            handleStatus(clientId, status);
+          }
         }
       });
   }
@@ -320,7 +388,9 @@ public class PubnubPlugin implements MethodCallHandler {
         @Override
         public void onResponse(PNChannelGroupsDeleteGroupResult res, PNStatus status) {
           result.success(!status.isError());
-          handleStatus(clientId, status);
+          if(status != null) {
+            handleStatus(clientId, status);
+          }
         }
       });
   }

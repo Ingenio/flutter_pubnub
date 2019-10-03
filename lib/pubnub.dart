@@ -10,19 +10,16 @@ class PubNubConfig {
   static final _publishKey = 'publishKey';
   static final _subscribeKey = 'subscribeKey';
   static final _authKey = 'authKey';
-  static final _secretKey = 'secretKey';
   static final _presenceTimeoutKey = 'presenceTimeout';
   static final _uuidKey = 'uuid';
   static final _filterKey = 'filter';
   static final _uuid = Uuid();
 
-  PubNubConfig(this.publishKey, this.subscribeKey,
-      {this.authKey, this.secretKey, this.presenceTimeout, this.uuid, this.filter});
+  PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTimeout, this.uuid, this.filter});
 
   final String publishKey;
   final String subscribeKey;
   final String authKey;
-  final String secretKey;
   final int presenceTimeout;
   final String uuid;
   final String filter;
@@ -35,7 +32,6 @@ class PubNubConfig {
       _uuidKey: uuid,
       _filterKey: filter,
       _authKey: authKey,
-      _secretKey: secretKey
     };
 
     if (presenceTimeout != null) {
@@ -67,14 +63,19 @@ class PubNub {
   static const _deleteChannelGroupMethod = 'deleteChannelGroup';
   static const _subscribeToChannelGroupsMethod = 'subscribeToChannelGroups';
   static const _unsubscribeFromChannelGroupsMethod = 'unsubscribeFromChannelGroups';
+  static const _historyMethod = 'history';
 
   // Arguments keys
+  static const _channelKey = 'channel';
   static const _channelsKey = 'channels';
   static const _channelGroupKey = 'channelGroup';
   static const _channelGroupsKey = 'channelGroups';
   static const _stateKey = 'state';
   static const _messageKey = 'message';
   static const _metadataKey = 'metadata';
+  static const _limitKey = "limit";
+  static const _startKey = "start";
+  static const _endKey = "end";
 
   static const _statusCategoryKey = 'category';
   static const _statusOperationKey = 'operation';
@@ -149,6 +150,12 @@ class PubNub {
   }
 
   // New: https://www.pubnub.com/docs/android-java/api-reference-channel-groups#removing-channels-args-1
+
+  ///  Lists all the channels of the channel group.
+  Future<List> history(String channel, int limit, {int start, int end}) async {
+    return await _invokeMethod(
+        _historyMethod, {_channelKey: channel, _limitKey: limit, _startKey: start, _endKey: end});
+  }
 
   /// Adds channels to a channel group.
   Future<void> addChannelsToChannelGroup(String channelGroup, List<String> channels) async {
