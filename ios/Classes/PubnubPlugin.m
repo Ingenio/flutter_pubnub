@@ -20,6 +20,14 @@ NSString *const UNSUBSCRIBE_METHOD = @"unsubscribe";
 NSString *const DISPOSE_METHOD = @"dispose";
 NSString *const UUID_METHOD = @"uuid";
 
+NSString *const ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = @"addChannelsToChannelGroup";
+NSString *const LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = @"listChannelsForChannelGroup";
+NSString *const REMOVE_CHANNELS_FOR_CHANNEL_GROUP_METHOD = @"removeChannelsFromChannelGroup";
+NSString *const DELETE_CHANNEL_GROUP_METHOD = @"deleteChannelGroup";
+NSString *const SUBSCRIBE_TO_CHANNEL_GROUP_METHOD = @"subscribeToChannelGroups";
+NSString *const UNSUBSCRIBE_FROM_CHANNEL_GROUP_METHOD = @"unsubscribeFromChannelGroups";
+NSString *const HISTORY_METHOD = @"history";
+
 NSString *const CLIENT_ID_KEY = @"clientId";
 NSString *const CHANNELS_KEY = @"channels";
 NSString *const STATE_KEY = @"state";
@@ -38,6 +46,11 @@ NSString *const EVENT_KEY = @"event";
 NSString *const OCCUPANCY_KEY = @"occupancy";
 NSString *const STATUS_CATEGORY_KEY = @"category";
 NSString *const STATUS_OPERATION_KEY = @"operation";
+NSString *const CHANNEL_GROUP_KEY = @"channelGroup";
+NSString *const CHANNEL_GROUPS_KEY = @"channelGroups";
+NSString *const LIMIT_KEY = @"limit";
+NSString *const  START_KEY = @"start";
+NSString *const  END_KEY = @"end";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -74,18 +87,35 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
         NSString *clientId = call.arguments[CLIENT_ID_KEY];
         
         if ([DISPOSE_METHOD isEqualToString:call.method]) {
-            result([self handleDispose:call clientId:clientId]);
-        } else if  ([SUBSCRIBE_METHOD isEqualToString:call.method]) {
-            result([self handleSubscribe:call clientId:clientId]);
+            [self handleDispose:call clientId:clientId result:result];
+        } else if  ([SUBSCRIBE_METHOD isEqualToString:call.method ]) {
+            [self handleSubscribe:call clientId:clientId result:result];
         } else if  ([PUBLISH_METHOD isEqualToString:call.method]) {
-            result([self handlePublish:call clientId:clientId]);
+            [self handlePublish:call clientId:clientId result:result];
         } else if  ([PRESENCE_METHOD isEqualToString:call.method]) {
-            result([self handlePresence:call clientId:clientId]);
+            [self handlePresence:call clientId:clientId result:result];
         } else if  ([UNSUBSCRIBE_METHOD isEqualToString:call.method]) {
-            result([self handleUnsubscribe:call clientId:clientId]);
+            [self handleUnsubscribe:call clientId:clientId result:result];
         } else if  ([UUID_METHOD isEqualToString:call.method]) {
-            result([self handleUUID:call clientId:clientId]);
-        } else {
+            [self handleUUID:call clientId:clientId result:result];
+        } else if  ([ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD isEqualToString:call.method]) {
+            [self handleAddChannelsToChannelGroup:call clientId:clientId result:result];
+        } else if  ([LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD isEqualToString:call.method]) {
+            [self handleListChannelsForChannelGroup:call clientId:clientId result:result];
+        } else if  ([REMOVE_CHANNELS_FOR_CHANNEL_GROUP_METHOD isEqualToString:call.method]) {
+            [self handleRemoveChannelsFromChannelGroup:call clientId:clientId result:result];
+        } else if  ([DELETE_CHANNEL_GROUP_METHOD isEqualToString:call.method]) {
+            [self handleDeleteChannelGroup:call clientId:clientId result:result];
+        } else if  ([SUBSCRIBE_TO_CHANNEL_GROUP_METHOD isEqualToString:call.method]) {
+            [self handleSubscribeToChannelGroups:call clientId:clientId result:result];
+        } else if  ([UNSUBSCRIBE_FROM_CHANNEL_GROUP_METHOD isEqualToString:call.method]) {
+            [self handleUnsubscribeFromChannelGroups:call clientId:clientId result:result];
+        } else if  ([HISTORY_METHOD isEqualToString:call.method]) {
+            [self handleHistory:call clientId:clientId result:result];
+        }
+        
+        
+        else {
             result(FlutterMethodNotImplemented);
         }
     }
@@ -128,6 +158,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
 - (PNConfiguration *)configFromCall:(FlutterMethodCall*)call {
     NSString *publishKey = call.arguments[PUBLISH_CONFIG_KEY];
+    PNConfiguration *config = NULL;
     
     NSLog(@"IN CONFIG FROM CALL");
     if((id)publishKey == [NSNull null] || publishKey == NULL) {
@@ -145,9 +176,11 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     id presenceTimeout = call.arguments[PRESENCE_TIMEOUT_KEY];
     id uuid = call.arguments[UUID_KEY];
     
-    PNConfiguration *config =
-    [PNConfiguration configurationWithPublishKey:publishKey
+     
+    config =
+         [PNConfiguration configurationWithPublishKey:publishKey
                                     subscribeKey:subscribeKey];
+   
     
     if(uuid != [NSNull null]) {
         NSLog(@"configFromCall: setting uuid");
@@ -169,12 +202,183 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     return config;
 }
 
-- (id) handleUnsubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId {
+- (void) handleHistory:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSNumber *limit = call.arguments[LIMIT_KEY];
+    NSNumber *start = call.arguments[START_KEY];
+    NSNumber *end = call.arguments[END_KEY];
+    NSString *channel = call.arguments[CHANNEL_KEY];
+
+    
+    
+    if((id)limit == [NSNull null] || limit == NULL || [limit integerValue] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Limit can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)channel == [NSNull null] || channel == NULL || channel.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)start == [NSNull null] || start == NULL) {
+        start = NULL;
+    }
+    
+    if((id)end == [NSNull null] || end == NULL) {
+           end = NULL;
+       }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    
+    __weak __typeof(self) weakSelf = self;
+    
+
+    [client historyForChannel:channel start:start end:end limit:[limit integerValue] reverse:NO includeTimeToken:YES withCompletion:^(PNHistoryResult *res, PNErrorStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+
+        
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+        
+        if(res != NULL) {
+            result([[res data] messages]); // returns something like:  [{message: {message: Hello World!}, timetoken: 15701424217963024}]
+        } else {
+            result(NULL);
+        }
+    }];
+    
+}
+
+- (void) handleAddChannelsToChannelGroup:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    NSString *channelGroup = call.arguments[CHANNEL_GROUP_KEY];
+    
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel group channels can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)channelGroup == [NSNull null] || channelGroup == NULL || channelGroup.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel group can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    [client addChannels: channels toGroup:channelGroup
+         withCompletion:^(PNAcknowledgmentStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        result(NULL);
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+    }];
+    
+}
+- (void) handleListChannelsForChannelGroup:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSString *channelGroup = call.arguments[CHANNEL_GROUP_KEY];
+    
+    if((id)channelGroup == [NSNull null] || channelGroup == NULL || channelGroup.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel group can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    [client channelsForGroup:channelGroup withCompletion:^(PNChannelGroupChannelsResult *res,
+                                                           PNErrorStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+        result([[res data] channels]);
+    }];
+    
+}
+- (void) handleRemoveChannelsFromChannelGroup:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    NSString *channelGroup = call.arguments[CHANNEL_GROUP_KEY];
+    
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel group channels can't be null or empty"userInfo:nil];
+    }
+    
+    if((id)channelGroup == [NSNull null] || channelGroup == NULL || channelGroup.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel group can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    [client removeChannels:channels fromGroup:channelGroup
+            withCompletion:^(PNAcknowledgmentStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+        result(NULL);
+    }];
+}
+
+- (void) handleDeleteChannelGroup:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSString *channelGroup = call.arguments[CHANNEL_GROUP_KEY];
+    
+    if((id)channelGroup == [NSNull null] || channelGroup == NULL || channelGroup.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel group can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    [client removeChannelsFromGroup:channelGroup withCompletion:^(PNAcknowledgmentStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+        result(NULL);
+    }];
+    
+    result(NULL);
+}
+
+- (void) handleSubscribeToChannelGroups:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSArray<NSString *> *channelGroups = call.arguments[CHANNEL_GROUPS_KEY];
+    
+    if((id)channelGroups == [NSNull null] || channelGroups == NULL || [channelGroups count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel groups can't be null or empty"userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    [client subscribeToChannelGroups:channelGroups withPresence:YES];
+    
+    result(NULL);
+}
+
+- (void) handleUnsubscribeFromChannelGroups:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSArray<NSString *> *channelGroups = call.arguments[CHANNEL_GROUPS_KEY];
+    
+    if((id)channelGroups == [NSNull null] || channelGroups == NULL || [channelGroups count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel groups can't be null or empty"userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    [client unsubscribeFromChannelGroups:channelGroups withPresence:YES];
+    
+    result(NULL);
+}
+
+- (void) handleUnsubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     
     PubNub *client = [self getClient:clientId call:call];
     
-     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
         NSLog(@"Unsubscribing from channels: %@", channels);
         [client unsubscribeFromChannels:channels withPresence:NO];
     } else {
@@ -182,10 +386,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
         [client unsubscribeFromAll];
     }
     
-    return NULL;
+    result(NULL);
 }
 
-- (id) handleDispose:(FlutterMethodCall*)call clientId:(NSString *)clientId {
+- (void) handleDispose:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     
     for(PubNub *client in [self.clients allValues]) {
         [client unsubscribeFromAll];
@@ -193,16 +397,16 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     [self.clients removeAllObjects];
     
-    return NULL;
+    result(NULL);
 }
 
-- (id) handleUUID:(FlutterMethodCall*)call clientId:(NSString *)clientId {
+- (void) handleUUID:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     PubNub *client = [self getClient:clientId call:call];
     NSLog(@"UUID method: clientid: %@, client: %@", clientId, client);
-    return [[client currentConfiguration] uuid];
+    result([[client currentConfiguration] uuid]);
 }
 
-- (id) handlePublish:(FlutterMethodCall*)call clientId:(NSString *)clientId {
+- (void) handlePublish:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary *message = call.arguments[MESSAGE_KEY];
     NSDictionary *metadata = call.arguments[METADATA_KEY];
@@ -226,10 +430,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
         }];
     }
     
-    return NULL;
+    result(NULL);
 }
 
-- (id) handlePresence:(FlutterMethodCall*)call clientId:(NSString *)clientId {
+- (void) handlePresence:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary<NSString*, NSString*> *state = call.arguments[STATE_KEY];
     
@@ -246,19 +450,19 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     for(NSString *channel in channels) {
         [client setState: state forUUID:client.uuid onChannel: channel
           withCompletion:^(PNClientStateUpdateStatus *status) {
-          
-          if (status.isError) {
-              NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
-              [self.errorStreamHandler sendError:result];
-          } else {
-              [self.statusStreamHandler sendStatus:status clientId:clientId];
-          }
-      }];
+            
+            if (status.isError) {
+                NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+                [self.errorStreamHandler sendError:result];
+            } else {
+                [self.statusStreamHandler sendStatus:status clientId:clientId];
+            }
+        }];
     }
     
-    return NULL;
+    result(NULL);
 }
-- (id) handleSubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId {
+- (void) handleSubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     
     NSLog(@"Subscribe: %@", channels);
@@ -271,10 +475,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     [client subscribeToChannels:channels withPresence:YES];
     
-    return NULL;
+    result(NULL);
 }
 
-- (void)handleStatus:(PNPublishStatus *)status clientId:(NSString *)clientId {
+- (void)handleStatus:(PNStatus *)status clientId:(NSString *)clientId {
     if (status.isError) {
         NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
         [self.errorStreamHandler sendError:result];

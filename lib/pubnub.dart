@@ -32,7 +32,7 @@ class PubNubConfig {
       _subscribeKey: subscribeKey,
       _uuidKey: uuid,
       _filterKey: filter,
-      _authKey: authKey
+      _authKey: authKey,
     };
 
     if (presenceTimeout != null) {
@@ -58,12 +58,28 @@ class PubNub {
   static const _unsubscribeMethod = 'unsubscribe';
   static const _disposeMethod = 'dispose';
   static const _uuidMethod = 'uuid';
+  static const _addChannelsToChannelGroupMethod = 'addChannelsToChannelGroup';
+  static const _listChannelsForChannelGroupMethod =
+      'listChannelsForChannelGroup';
+  static const _removeChannelsFromChannelGroupMethod =
+      'removeChannelsFromChannelGroup';
+  static const _deleteChannelGroupMethod = 'deleteChannelGroup';
+  static const _subscribeToChannelGroupsMethod = 'subscribeToChannelGroups';
+  static const _unsubscribeFromChannelGroupsMethod =
+      'unsubscribeFromChannelGroups';
+  static const _historyMethod = 'history';
 
   // Arguments keys
+  static const _channelKey = 'channel';
   static const _channelsKey = 'channels';
+  static const _channelGroupKey = 'channelGroup';
+  static const _channelGroupsKey = 'channelGroups';
   static const _stateKey = 'state';
   static const _messageKey = 'message';
   static const _metadataKey = 'metadata';
+  static const _limitKey = "limit";
+  static const _startKey = "start";
+  static const _endKey = "end";
 
   static const _statusCategoryKey = 'category';
   static const _statusOperationKey = 'operation';
@@ -144,6 +160,58 @@ class PubNub {
     return await _invokeMethod(_uuidMethod);
   }
 
+  // New: https://www.pubnub.com/docs/android-java/api-reference-channel-groups#removing-channels-args-1
+
+  ///  Lists all the channels of the channel group.
+  Future<List> history(String channel, int limit, {int start, int end}) async {
+    return await _invokeMethod(_historyMethod, {
+      _channelKey: channel,
+      _limitKey: limit,
+      _startKey: start,
+      _endKey: end
+    });
+  }
+
+  /// Adds channels to a channel group.
+  Future<void> addChannelsToChannelGroup(
+      String channelGroup, List<String> channels) async {
+    return await _invokeMethod(_addChannelsToChannelGroupMethod,
+        {_channelGroupKey: channelGroup, _channelsKey: channels});
+  }
+
+  ///  Lists all the channels of the channel group.
+  Future<List> listChannelsForChannelGroup(String channelGroup) async {
+    return await _invokeMethod(
+        _listChannelsForChannelGroupMethod, {_channelGroupKey: channelGroup});
+  }
+
+  /// Removes the channels from the channel group.
+  Future<void> removeChannelsFromChannelGroup(
+      String channelGroup, List<String> channels) async {
+    return await _invokeMethod(_removeChannelsFromChannelGroupMethod,
+        {_channelGroupKey: channelGroup, _channelsKey: channels});
+  }
+
+  /// Delete a channel group.
+  Future<void> deleteChannelGroup(String channelGroup) async {
+    return await _invokeMethod(
+        _deleteChannelGroupMethod, {_channelGroupKey: channelGroup});
+  }
+
+  /// Subscribe to a list of channels
+  Future<void> subscribeToChannelGroups(List<String> channelGroups) async {
+    return await _invokeMethod(
+        _subscribeToChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+  }
+
+  /// Subscribe to a list of channels
+  Future<void> unsubscribeFromChannelGroups(List<String> channelGroups) async {
+    return await _invokeMethod(_unsubscribeFromChannelGroupsMethod,
+        {_channelGroupsKey: channelGroups});
+  }
+
+  // End New
+
   bool _clientFilter(dynamic event) =>
       event[_clientIdKey] == config[_clientIdKey];
 
@@ -180,7 +248,8 @@ class PubNub {
     status[_statusCategoryKey] = PNStatusCategory.values[
         status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory.index];
     status[_statusOperationKey] = PNOperationType.values[
-        status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation.index];
+        status[_statusOperationKey] ??
+            PNOperationType.PNUnknownOperation.index];
     return status;
   }
 
