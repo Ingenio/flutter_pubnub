@@ -15,7 +15,8 @@ class PubNubConfig {
   static final _filterKey = 'filter';
   static final _uuid = Uuid();
 
-  PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTimeout, this.uuid, this.filter});
+  PubNubConfig(this.publishKey, this.subscribeKey,
+      {this.authKey, this.presenceTimeout, this.uuid, this.filter});
 
   final String publishKey;
   final String subscribeKey;
@@ -58,11 +59,14 @@ class PubNub {
   static const _disposeMethod = 'dispose';
   static const _uuidMethod = 'uuid';
   static const _addChannelsToChannelGroupMethod = 'addChannelsToChannelGroup';
-  static const _listChannelsForChannelGroupMethod = 'listChannelsForChannelGroup';
-  static const _removeChannelsFromChannelGroupMethod = 'removeChannelsFromChannelGroup';
+  static const _listChannelsForChannelGroupMethod =
+      'listChannelsForChannelGroup';
+  static const _removeChannelsFromChannelGroupMethod =
+      'removeChannelsFromChannelGroup';
   static const _deleteChannelGroupMethod = 'deleteChannelGroup';
   static const _subscribeToChannelGroupsMethod = 'subscribeToChannelGroups';
-  static const _unsubscribeFromChannelGroupsMethod = 'unsubscribeFromChannelGroups';
+  static const _unsubscribeFromChannelGroupsMethod =
+      'unsubscribeFromChannelGroups';
   static const _historyMethod = 'history';
 
   // Arguments keys
@@ -85,10 +89,14 @@ class PubNub {
 
   static final clients = Map<String, PubNub>();
 
-  static final _messageChannelStream = const EventChannel(_messageChannelName).receiveBroadcastStream();
-  static final _statusChannelStream = const EventChannel(_statusChannelName).receiveBroadcastStream();
-  static final _presenceChannelStream = const EventChannel(_presenceChannelName).receiveBroadcastStream();
-  static final _errorChannelStream = const EventChannel(_errorChannelName).receiveBroadcastStream();
+  static final _messageChannelStream =
+      const EventChannel(_messageChannelName).receiveBroadcastStream();
+  static final _statusChannelStream =
+      const EventChannel(_statusChannelName).receiveBroadcastStream();
+  static final _presenceChannelStream =
+      const EventChannel(_presenceChannelName).receiveBroadcastStream();
+  static final _errorChannelStream =
+      const EventChannel(_errorChannelName).receiveBroadcastStream();
 
   /// Create the plugin, UUID and filter expressions are optional and can be used for tracking purposes and filtering purposes, for instance can disable getting messages on the same UUID.
   PubNub(PubNubConfig config) : this.config = config.toMap() {
@@ -112,12 +120,15 @@ class PubNub {
   }
 
   /// Set Presence State on a specified channel
-  Future<void> presence(List<String> channels, Map<String, String> state) async {
-    return await _invokeMethod(_presenceMethod, {_stateKey: state, _channelsKey: channels});
+  Future<void> presence(
+      List<String> channels, Map<String, String> state) async {
+    return await _invokeMethod(
+        _presenceMethod, {_stateKey: state, _channelsKey: channels});
   }
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
-  Future<void> publish(List<String> channels, Map message, {Map metadata}) async {
+  Future<void> publish(List<String> channels, Map message,
+      {Map metadata}) async {
     Map args = {_messageKey: message, _channelsKey: channels};
 
     if (metadata != null) {
@@ -153,64 +164,83 @@ class PubNub {
 
   ///  Lists all the channels of the channel group.
   Future<List> history(String channel, int limit, {int start, int end}) async {
-    return await _invokeMethod(
-        _historyMethod, {_channelKey: channel, _limitKey: limit, _startKey: start, _endKey: end});
+    return await _invokeMethod(_historyMethod, {
+      _channelKey: channel,
+      _limitKey: limit,
+      _startKey: start,
+      _endKey: end
+    });
   }
 
   /// Adds channels to a channel group.
-  Future<void> addChannelsToChannelGroup(String channelGroup, List<String> channels) async {
-    return await _invokeMethod(
-        _addChannelsToChannelGroupMethod, {_channelGroupKey: channelGroup, _channelsKey: channels});
+  Future<void> addChannelsToChannelGroup(
+      String channelGroup, List<String> channels) async {
+    return await _invokeMethod(_addChannelsToChannelGroupMethod,
+        {_channelGroupKey: channelGroup, _channelsKey: channels});
   }
 
   ///  Lists all the channels of the channel group.
   Future<List> listChannelsForChannelGroup(String channelGroup) async {
-    return await _invokeMethod(_listChannelsForChannelGroupMethod, {_channelGroupKey: channelGroup});
+    return await _invokeMethod(
+        _listChannelsForChannelGroupMethod, {_channelGroupKey: channelGroup});
   }
 
   /// Removes the channels from the channel group.
-  Future<void> removeChannelsFromChannelGroup(String channelGroup, List<String> channels) async {
-    return await _invokeMethod(
-        _removeChannelsFromChannelGroupMethod, {_channelGroupKey: channelGroup, _channelsKey: channels});
+  Future<void> removeChannelsFromChannelGroup(
+      String channelGroup, List<String> channels) async {
+    return await _invokeMethod(_removeChannelsFromChannelGroupMethod,
+        {_channelGroupKey: channelGroup, _channelsKey: channels});
   }
 
   /// Delete a channel group.
   Future<void> deleteChannelGroup(String channelGroup) async {
-    return await _invokeMethod(_deleteChannelGroupMethod, {_channelGroupKey: channelGroup});
+    return await _invokeMethod(
+        _deleteChannelGroupMethod, {_channelGroupKey: channelGroup});
   }
 
   /// Subscribe to a list of channels
   Future<void> subscribeToChannelGroups(List<String> channelGroups) async {
-    return await _invokeMethod(_subscribeToChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+    return await _invokeMethod(
+        _subscribeToChannelGroupsMethod, {_channelGroupsKey: channelGroups});
   }
 
   /// Subscribe to a list of channels
   Future<void> unsubscribeFromChannelGroups(List<String> channelGroups) async {
-    return await _invokeMethod(_unsubscribeFromChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+    return await _invokeMethod(_unsubscribeFromChannelGroupsMethod,
+        {_channelGroupsKey: channelGroups});
   }
 
   // End New
 
-  bool _clientFilter(dynamic event) => event[_clientIdKey] == config[_clientIdKey];
+  bool _clientFilter(dynamic event) =>
+      event[_clientIdKey] == config[_clientIdKey];
 
   /// Fires whenever the a message is received.
   Stream<Map> get onMessageReceived {
-    return _messageChannelStream.where(_clientFilter).map((dynamic event) => _parseMessage(event));
+    return _messageChannelStream
+        .where(_clientFilter)
+        .map((dynamic event) => _parseMessage(event));
   }
 
   /// Fires whenever the status changes.
   Stream<Map> get onStatusReceived {
-    return _statusChannelStream.where(_clientFilter).map((dynamic event) => _parseStatus(event));
+    return _statusChannelStream
+        .where(_clientFilter)
+        .map((dynamic event) => _parseStatus(event));
   }
 
   /// Fires whenever the presence changes.
   Stream<Map> get onPresenceReceived {
-    return _presenceChannelStream.where(_clientFilter).map((dynamic event) => _parsePresence(event));
+    return _presenceChannelStream
+        .where(_clientFilter)
+        .map((dynamic event) => _parsePresence(event));
   }
 
   /// Fires whenever an error is received.
   Stream<Map> get onErrorReceived {
-    return _errorChannelStream.where(_clientFilter).map((dynamic event) => _parseError(event));
+    return _errorChannelStream
+        .where(_clientFilter)
+        .map((dynamic event) => _parseError(event));
   }
 
   /// Fires whenever a status is received.
@@ -218,7 +248,8 @@ class PubNub {
     status[_statusCategoryKey] = PNStatusCategory.values[
         status[_statusCategoryKey] ?? PNStatusCategory.PNUnknownCategory.index];
     status[_statusOperationKey] = PNOperationType.values[
-        status[_statusOperationKey] ?? PNOperationType.PNUnknownOperation.index];
+        status[_statusOperationKey] ??
+            PNOperationType.PNUnknownOperation.index];
     return status;
   }
 

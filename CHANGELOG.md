@@ -17,3 +17,7 @@
 ## [0.1.3]
 
 * Removed unused constant and documentation tweaks
+
+## [0.1.4]
+
+* Added channel groups handling and history
