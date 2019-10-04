@@ -59,6 +59,13 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 * [Publishing to channels](#Publishing-to-channels)
 * [Handle presence](#Handle-presence)
 * [Subscribe to PubNub events](#Subscribe-to-PubNub-Events)
+* [Adding channels to a channel group](#Adding-channels-to-a-channel-group)
+* [List channels belonging to a channel group](#List-channels-belonging-to-a-channel-group)
+* [Remove channels from a channel group](#Remove-channels-from-a-channel-group)
+* [Delete a channel group](#Delete-a-channel-group)
+* [Subscribe to channel groups](#Subscribe-to-channel-groups)
+* [Unsubscribe from channel groups](#Unsubscribe-from-channel-groups)
+* [Retrieve history](#Retrieve-history)
 * [Cleanup](#Cleanup)
 
 ## Creating one or more clients
@@ -215,7 +222,7 @@ _client.listChannelsForChannelGroup('Group1').then((channels) {
                         
 ```
 
-# Remove channels from a channel group
+## Remove channels from a channel group
 
 ``` dart
 
@@ -223,7 +230,7 @@ _client.listChannelsForChannelGroup('Group1').then((channels) {
                         
 ```
 
-# Delete a channel group
+## Delete a channel group
 
 ``` dart
 
@@ -231,7 +238,7 @@ _client.deleteChannelGroup('Group1');
 
 ```
 
-# Subscribe to channel groups
+## Subscribe to channel groups
 
 ``` dart
 
@@ -239,7 +246,7 @@ _client.subscribeToChannelGroups(['Group1']);
 
 ```
 
-# Unsubscribe from channel groups
+## Unsubscribe from channel groups
 
 ``` dart
 
@@ -247,7 +254,7 @@ _client.unsubscribeFromChannelGroups(['Group1']);
 
 ```
 
-# Retrieve history
+## Retrieve history
 
 ``` dart
 
