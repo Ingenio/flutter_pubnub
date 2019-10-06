@@ -25,6 +25,7 @@ The plugin does not cover all functionalities offered by PubNub but is functiona
 We have items we will be working on soon:
 
 PNConfig features:
+- push notifications
 - cipher key
 - custom origin
 
