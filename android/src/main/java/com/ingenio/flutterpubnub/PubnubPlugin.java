@@ -283,7 +283,7 @@ public class PubnubPlugin implements MethodCallHandler {
                 if(res != null) {
                   for (PNHistoryItemResult item : res.getMessages()) {
                     Map map = new HashMap<String, Object>();
-                    String message = "{message: " +  item.getEntry().toString() + ", timetoken: " + item.getTimetoken() + "}";
+                    String message = "{\"message: \"" +  item.getEntry().toString() + ", \"timetoken: \"" + item.getTimetoken() + "}";
 
                     items.add(message); // returns something like:
                   }
