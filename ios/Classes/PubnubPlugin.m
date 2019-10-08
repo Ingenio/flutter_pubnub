@@ -406,8 +406,22 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
             [strongSelf handleStatus:status clientId:clientId];
         }
         
-        if(res != NULL) {
-            result([[res data] messages]); // returns something like:  [{message: {message: Hello World!}, timetoken: 15701424217963024}]
+        if(res != NULL && [[[res data] messages] count] > 0 && [[[[res data] messages] firstObject] isKindOfClass:[NSDictionary class]]) {
+            NSMutableArray *messages = [NSMutableArray new];
+            
+            for(NSDictionary *message in [[res data] messages]) {
+                NSError *error;
+                NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message
+                                                                   options:0
+                                                                     error:&error];
+
+                if (jsonData) {
+                    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                    [messages addObject:jsonString];
+                }
+            }
+            
+            result(messages); // returns something like:  [{message: {message: Hello World!}, timetoken: 15701424217963024}]
         } else {
             result(NULL);
         }

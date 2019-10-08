@@ -317,4 +317,4 @@ enum PNOperationType {
 }
 
 /// Push token type
-enum PushType { APNS, GCM }
+enum PushType { APNS, FCM }

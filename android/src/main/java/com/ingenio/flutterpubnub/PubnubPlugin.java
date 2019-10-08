@@ -314,6 +314,7 @@ public class PubnubPlugin implements MethodCallHandler {
 
         PubNub client = getClient(clientId, call);
         System.out.println("handleAddPushNotificationsOnChannels: " + clientId);
+        System.out.println("PushType: " + getPushType(pushType));
 
         client.addPushNotificationsOnChannels()
                 .pushType(getPushType(pushType))
@@ -322,6 +323,10 @@ public class PubnubPlugin implements MethodCallHandler {
                 .async(new PNCallback<PNPushAddChannelResult>() {
                     @Override
                     public void onResponse(PNPushAddChannelResult res, PNStatus status) {
+                        System.out.println("handleAddPushNotificationsOnChannels result: " + res);
+                        System.out.println("handleAddPushNotificationsOnChannels error: " + status.isError());
+                        System.out.println("handleAddPushNotificationsOnChannels status: " + status);
+
                         result.success(!status.isError());
                         if (status != null) {
                             handleStatus(clientId, status);
@@ -457,10 +462,10 @@ public class PubnubPlugin implements MethodCallHandler {
 
                         List<String> items = new ArrayList<>();
 
-                        if (res != null) {
+                        if(res != null) {
                             for (PNHistoryItemResult item : res.getMessages()) {
                                 Map map = new HashMap<String, Object>();
-                                String message = "{message: " + item.getEntry().toString() + ", timetoken: " + item.getTimetoken() + "}";
+                                String message = "{\"message\": " +  item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
 
                                 items.add(message); // returns something like:
                             }
