@@ -17,6 +17,8 @@ dependencies:
   # https://pub.dev/packages/firebase_messaging
   firebase_messaging: ^5.1.6
 
+  firebase_analytics: ^5.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

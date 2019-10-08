@@ -816,7 +816,22 @@ typedef enum {
 
 - (void) sendMessage:(PNMessageResult *)message clientId:(NSString *)clientId {
     if(self.eventSink) {
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: message.uuid, CHANNEL_KEY: message.data.channel, MESSAGE_KEY: message.data.message};
+        
+        NSString *jsonString = @"";
+        
+        if([message.data.message isKindOfClass:[NSDictionary class]]) {
+            NSError *error;
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message.data.message
+                                                    options:0
+                                                    error:&error];
+
+            if (jsonData) {
+               jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            }
+        }
+        
+        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: message.uuid, CHANNEL_KEY: message.data.channel, MESSAGE_KEY: jsonString};
+
         self.eventSink(result);
     }
 }
