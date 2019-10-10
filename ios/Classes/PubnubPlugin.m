@@ -27,6 +27,10 @@ NSString *const DELETE_CHANNEL_GROUP_METHOD = @"deleteChannelGroup";
 NSString *const SUBSCRIBE_TO_CHANNEL_GROUP_METHOD = @"subscribeToChannelGroups";
 NSString *const UNSUBSCRIBE_FROM_CHANNEL_GROUP_METHOD = @"unsubscribeFromChannelGroups";
 NSString *const HISTORY_METHOD = @"history";
+NSString *const ADD_PUSH_NOTIFICATIONS_ON_CHANNELS_METHOD = @"addPushNotificationsOnChannels";
+NSString *const LIST_PUSH_NOTIFICATION_CHANNELS_METHOD = @"listPushNotificationChannels";
+NSString *const REMOVE_PUSH_NOTIFICATIONS_FROM_CHANNELS_METHOD = @"removePushNotificationsFromChannels";
+NSString *const REMOVE_ALL_PUSH_NOTIFICATIONS_FROM_DEVICE_AITH_PUSH_TOKEN_METHOD = @"removeAllPushNotificationsFromDeviceWithPushToken";
 
 NSString *const CLIENT_ID_KEY = @"clientId";
 NSString *const CHANNELS_KEY = @"channels";
@@ -49,8 +53,10 @@ NSString *const STATUS_OPERATION_KEY = @"operation";
 NSString *const CHANNEL_GROUP_KEY = @"channelGroup";
 NSString *const CHANNEL_GROUPS_KEY = @"channelGroups";
 NSString *const LIMIT_KEY = @"limit";
-NSString *const  START_KEY = @"start";
-NSString *const  END_KEY = @"end";
+NSString *const START_KEY = @"start";
+NSString *const END_KEY = @"end";
+NSString *const PUSH_TYPE_KEY = @"pushType";
+NSString *const PUSH_TOKEN_KEY = @"pushToken";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -112,8 +118,15 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
             [self handleUnsubscribeFromChannelGroups:call clientId:clientId result:result];
         } else if  ([HISTORY_METHOD isEqualToString:call.method]) {
             [self handleHistory:call clientId:clientId result:result];
+        } else if  ([ADD_PUSH_NOTIFICATIONS_ON_CHANNELS_METHOD isEqualToString:call.method]) {
+            [self handleAddPushNotificationsOnChannels:call clientId:clientId result:result];
+        } else if  ([LIST_PUSH_NOTIFICATION_CHANNELS_METHOD isEqualToString:call.method]) {
+            [self handleListPushNotificationChannels:call clientId:clientId result:result];
+        } else if  ([REMOVE_PUSH_NOTIFICATIONS_FROM_CHANNELS_METHOD isEqualToString:call.method]) {
+            [self handleRemovePushNotificationsFromChannels:call clientId:clientId result:result];
+        } else if  ([REMOVE_ALL_PUSH_NOTIFICATIONS_FROM_DEVICE_AITH_PUSH_TOKEN_METHOD isEqualToString:call.method]) {
+            [self handleRemoveAllPushNotificationsFromDeviceWithPushToken:call clientId:clientId result:result];
         }
-        
         
         else {
             result(FlutterMethodNotImplemented);
@@ -176,11 +189,11 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     id presenceTimeout = call.arguments[PRESENCE_TIMEOUT_KEY];
     id uuid = call.arguments[UUID_KEY];
     
-     
+    
     config =
-         [PNConfiguration configurationWithPublishKey:publishKey
+    [PNConfiguration configurationWithPublishKey:publishKey
                                     subscribeKey:subscribeKey];
-   
+    
     
     if(uuid != [NSNull null]) {
         NSLog(@"configFromCall: setting uuid");
@@ -202,12 +215,165 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     return config;
 }
 
+- (void) handleAddPushNotificationsOnChannels:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    NSString *pushToken = call.arguments[PUSH_TOKEN_KEY];
+    NSNumber *pushType = call.arguments[PUSH_TYPE_KEY];
+    
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channels can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)pushToken == [NSNull null] || pushToken == NULL || pushToken.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Token can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)pushType == [NSNull null] || pushType == NULL) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Type can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    if([pushType integerValue] == APNS) {
+        client.push().enable().channels(channels)
+        .apnsToken([pushToken dataUsingEncoding:NSUTF8StringEncoding])
+        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            result(NULL);
+            if(status != NULL) {
+                [strongSelf handleStatus:status clientId:clientId];
+            }
+        });
+    } else {
+        client.push().enable().channels(channels)
+        .fcmToken(pushToken)
+        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            result(NULL);
+            if(status != NULL) {
+                [strongSelf handleStatus:status clientId:clientId];
+            }
+        });
+    }
+}
+
+- (void) handleListPushNotificationChannels:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSString *pushToken = call.arguments[PUSH_TOKEN_KEY];
+    NSNumber *pushType = call.arguments[PUSH_TYPE_KEY];
+    
+    if((id)pushToken == [NSNull null] || pushToken == NULL || pushToken.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Token can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)pushType == [NSNull null] || pushType == NULL) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Type can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    if([pushType integerValue] == APNS) {
+        client.push().audit().apnsToken([pushToken dataUsingEncoding:NSUTF8StringEncoding])
+        .performWithCompletion(^(PNAPNSEnabledChannelsResult *res, PNErrorStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            result([[res data] channels]);
+            if(status != NULL) {
+                [strongSelf handleStatus:status clientId:clientId];
+            }
+        });
+    } else {
+        client.push().audit().fcmToken(pushToken)
+        .performWithCompletion(^(PNAPNSEnabledChannelsResult *res, PNErrorStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            result([[res data] channels]);
+            if(status != NULL) {
+                [strongSelf handleStatus:status clientId:clientId];
+            }
+        });
+    }
+    
+}
+
+- (void) handleRemovePushNotificationsFromChannels:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    NSString *pushToken = call.arguments[PUSH_TOKEN_KEY];
+    NSNumber *pushType = call.arguments[PUSH_TYPE_KEY];
+    
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channels can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)pushToken == [NSNull null] || pushToken == NULL || pushToken.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Token can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)pushType == [NSNull null] || pushType == NULL) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Type can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    if([pushType integerValue] == APNS) {
+        client.push().disable().channels(channels)
+        .apnsToken([pushToken dataUsingEncoding:NSUTF8StringEncoding])
+        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            result(NULL);
+            if(status != NULL) {
+                [strongSelf handleStatus:status clientId:clientId];
+            }
+        });
+    } else {
+        client.push().disable().channels(channels)
+        .fcmToken(pushToken)
+        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            result(NULL);
+            if(status != NULL) {
+                [strongSelf handleStatus:status clientId:clientId];
+            }
+        });
+    }
+}
+
+- (void) handleRemoveAllPushNotificationsFromDeviceWithPushToken:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    
+    NSString *pushToken = call.arguments[PUSH_TOKEN_KEY];
+    NSNumber *pushType = call.arguments[PUSH_TYPE_KEY];
+    
+    if((id)pushToken == [NSNull null] || pushToken == NULL || pushToken.length == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Token can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)pushType == [NSNull null] || pushType == NULL) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Push Type can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    [client removeAllPushNotificationsFromDeviceWithPushToken:[pushToken dataUsingEncoding:NSUTF8StringEncoding]
+                                                andCompletion:^(PNAcknowledgmentStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        result(NULL);
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+    }];
+}
+
 - (void) handleHistory:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSNumber *limit = call.arguments[LIMIT_KEY];
     NSNumber *start = call.arguments[START_KEY];
     NSNumber *end = call.arguments[END_KEY];
     NSString *channel = call.arguments[CHANNEL_KEY];
-
+    
     
     
     if((id)limit == [NSNull null] || limit == NULL || [limit integerValue] == 0) {
@@ -223,18 +389,18 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     }
     
     if((id)end == [NSNull null] || end == NULL) {
-           end = NULL;
-       }
+        end = NULL;
+    }
     
     PubNub *client = [self getClient:clientId call:call];
     
     
     __weak __typeof(self) weakSelf = self;
     
-
+    
     [client historyForChannel:channel start:start end:end limit:[limit integerValue] reverse:NO includeTimeToken:YES withCompletion:^(PNHistoryResult *res, PNErrorStatus *status) {
         __strong __typeof(self) strongSelf = weakSelf;
-
+        
         
         if(status != NULL) {
             [strongSelf handleStatus:status clientId:clientId];
@@ -290,6 +456,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     }];
     
 }
+
 - (void) handleListChannelsForChannelGroup:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSString *channelGroup = call.arguments[CHANNEL_GROUP_KEY];
     
@@ -526,6 +693,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     [self.presenceStreamHandler sendPresence:presence clientId:[self getClientId:client]];
 }
 
+typedef enum {
+    APNS=0,
+    GCM=1
+} PushType;
 
 + (NSNumber *) getCategoryAsNumber:(PNStatusCategory) category {
     switch(category) {
@@ -645,7 +816,22 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
 - (void) sendMessage:(PNMessageResult *)message clientId:(NSString *)clientId {
     if(self.eventSink) {
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: message.uuid, CHANNEL_KEY: message.data.channel, MESSAGE_KEY: message.data.message};
+        
+        NSString *jsonString = @"";
+        
+        if([message.data.message isKindOfClass:[NSDictionary class]]) {
+            NSError *error;
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message.data.message
+                                                    options:0
+                                                    error:&error];
+
+            if (jsonData) {
+               jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            }
+        }
+        
+        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: message.uuid, CHANNEL_KEY: message.data.channel, MESSAGE_KEY: jsonString};
+
         self.eventSink(result);
     }
 }
@@ -667,7 +853,6 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 - (void) sendStatus:(PNStatus *)status clientId:(NSString *)clientId {
     NSLog(@"sendStatus (StatusStreamHandler), status: %@, clientId:%@, eventSink: %@", status, clientId, self.eventSink);
     if(self.eventSink) {
-        
         NSArray<NSString *> *affectedChannels;
         if (status.category == PNConnectedCategory || status.category == PNReconnectedCategory) {
             PNSubscribeStatus *subscribeStatus = (PNSubscribeStatus *)status;
