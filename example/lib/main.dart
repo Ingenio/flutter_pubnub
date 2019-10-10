@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -50,6 +52,8 @@ class _MyAppState extends State<MyApp> {
       sendEvent('ERROR', error.toString());
     });
 
+    if (Platform.isIOS) iOSPermission();
+
     _firebaseMessaging.configure(
       onMessage: (Map<String, dynamic> message) async {
         print("onMessage: $message");
@@ -62,8 +66,13 @@ class _MyAppState extends State<MyApp> {
         print("onResume: $message");
       },
     );
+  }
 
-    _firebaseMessaging.requestNotificationPermissions();
+  void iOSPermission() {
+    _firebaseMessaging.requestNotificationPermissions(IosNotificationSettings(sound: true, badge: true, alert: true));
+    _firebaseMessaging.onIosSettingsRegistered.listen((IosNotificationSettings settings) {
+      print("Settings registered: $settings");
+    });
   }
 
   Future sendEvent(String eventName, String message) async {
