@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pubnub/pubnub.dart';
@@ -23,8 +23,6 @@ class _MyAppState extends State<MyApp> {
       filter: 'uuid != "127c1ab5-fc7f-4c46-8460-3207b6782007"'));
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
-
-  final FirebaseAnalytics _analytics = FirebaseAnalytics();
 
   @override
   void initState() {
@@ -76,13 +74,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future sendEvent(String eventName, String message) async {
-    int _end = message.length > 70 ? 70 : message.length - 1;
-    await _analytics.logEvent(
-      name: eventName,
-      parameters: <String, dynamic>{
-        'message': message.substring(0, _end),
-      },
-    );
+    Dio dio = new Dio(); // with default Options
+
+    await dio.post("http://logs-01.loggly.com/inputs/844af57e-4059-430a-923d-1151c23af240/tag/http",
+        data: {"flutter_pubnub": eventName, "message": message});
   }
 
   @override
@@ -238,6 +233,7 @@ class _MyAppState extends State<MyApp> {
                       print("Token: $token");
                       _firstUserClient.listPushNotificationChannels(PushType.FCM, token).then((channels) {
                         print("Push Notes Channels: $channels");
+                        sendEvent('PUSH CHANNELS', channels.toList().toString());
                       });
                     });
                   },

@@ -20,4 +20,4 @@
 
 ## [0.1.4]
 
-* Added channel groups handling and history
+* Added channel groups handling, push notifications and history

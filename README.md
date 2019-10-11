@@ -12,6 +12,7 @@ This plugin is not provided nor supported by PubNub. It was implemented part of 
 * Publish and Subscribe/Unsubscribe capabilities
 * Channel Groups
 * History
+* Push notifications
 * Status 
 * Error handling
 
@@ -25,7 +26,6 @@ The plugin does not cover all functionalities offered by PubNub but is functiona
 We have items we will be working on soon:
 
 PNConfig features:
-- push notifications
 - cipher key
 - custom origin
 
@@ -67,6 +67,7 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 * [Subscribe to channel groups](#Subscribe-to-channel-groups)
 * [Unsubscribe from channel groups](#Unsubscribe-from-channel-groups)
 * [Retrieve history](#Retrieve-history)
+* [Push Notifications](#Push-Notifications)
 * [Cleanup](#Cleanup)
 
 ## Creating one or more clients
@@ -259,7 +260,7 @@ _client.unsubscribeFromChannelGroups(['Group1']);
 
 ``` dart
 
- _client.history('Channel', 1).then((items) {
+_client.history('Channel', 1).then((items) {
                           if (items != null && items.isNotEmpty) {
                             print("Last Item: $items");
                           } else {
@@ -267,6 +268,46 @@ _client.unsubscribeFromChannelGroups(['Group1']);
                           }
                         });
                         
+```
+
+## Push Notifications
+
+Adding channels for push notifications using a Firebase messaging plugin push token
+
+``` dart
+
+_firebaseMessaging.getToken().then((token) {
+    print("Token: $token");
+    _client.addPushNotificationsOnChannels(PushType.FCM, token, ['Channel']);
+    });
+},
+
+```
+
+Listing channels enrolled in push notifications.
+
+``` dart
+
+_client.listPushNotificationChannels(PushType.FCM, token).then((channels) {
+    print("Push Notes Channels: $channels");
+});
+
+```
+
+Removing channels from push notifications.
+
+``` dart
+
+_client.removePushNotificationsFromChannels(PushType.FCM, token, ['Channel']);
+
+```
+
+Removing all channels from push notifications.
+
+``` dart
+
+_client.removeAllPushNotificationsFromDeviceWithPushToken(PushType.FCM, token);
+
 ```
 
 ## Cleanup
