@@ -21,3 +21,7 @@
 ## [0.1.4]
 
 * Added channel groups handling, push notifications and history
+
+## [0.2.0]
+
+* Added PubNub signals
