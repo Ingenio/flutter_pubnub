@@ -13,13 +13,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   final _firstUserClient = PubNub(PubNubConfig(
       'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
       uuid: 'a0a80f2d-b48d-460c-b3bd-a244a877df1f'));
   final _secondUserClient = PubNub(PubNubConfig(
       'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
-
       presenceTimeout: 120,
       uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007',
       filter: 'uuid != "127c1ab5-fc7f-4c46-8460-3207b6782007"'));
@@ -66,7 +64,6 @@ class _MyAppState extends State<MyApp> {
         print("onResume: $message");
       },
     );
-
   }
 
   void iOSPermission() {
@@ -82,7 +79,6 @@ class _MyAppState extends State<MyApp> {
     await dio.post("http://logs-01.loggly.com/inputs/336a5a72-0233-4403-9218-405f5516f266/tag/http",
         data: {"flutter_pubnub": eventName, "message": message});
   }
-
 
   @override
   void dispose() {
@@ -113,7 +109,7 @@ class _MyAppState extends State<MyApp> {
               FlatButton(
                   color: Colors.black12,
                   onPressed: () {
-                    _firstUserClient.subscribe(['Channel', 'Channel-pndebug']);
+                    _firstUserClient.subscribe(['Channel', 'Channel2']);
                     _secondUserClient.subscribe(['Channel']);
                   },
                   child: Text('Subscribe')),
@@ -274,7 +270,26 @@ class _MyAppState extends State<MyApp> {
                     });
                   },
                   child: Text('Token')),
-            ])
+            ]),
+            Padding(
+                padding: EdgeInsets.all(
+                  8.0,
+                ),
+                child: Divider(
+                  height: 1,
+                  color: Colors.black,
+                )),
+            Padding(
+                padding: EdgeInsets.only(left: 8.0),
+                child: Row(mainAxisAlignment: MainAxisAlignment.start, children: <Widget>[Text('Signals')])),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: <Widget>[
+              FlatButton(
+                  color: Colors.black12,
+                  onPressed: () {
+                    _firstUserClient.signal(['Channel2'], {'signal': 'Hello Signal'});
+                  },
+                  child: Text('Signal')),
+            ]),
           ]),
         ),
       );

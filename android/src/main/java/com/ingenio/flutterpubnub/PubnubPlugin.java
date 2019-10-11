@@ -26,6 +26,11 @@ import com.pubnub.api.models.consumer.history.PNHistoryResult;
 import com.pubnub.api.models.consumer.presence.PNSetStateResult;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
+import com.pubnub.api.models.consumer.pubsub.PNSignalResult;
+import com.pubnub.api.models.consumer.pubsub.message_actions.PNMessageActionResult;
+import com.pubnub.api.models.consumer.pubsub.objects.PNMembershipResult;
+import com.pubnub.api.models.consumer.pubsub.objects.PNSpaceResult;
+import com.pubnub.api.models.consumer.pubsub.objects.PNUserResult;
 import com.pubnub.api.models.consumer.push.PNPushAddChannelResult;
 import com.pubnub.api.models.consumer.push.PNPushListProvisionsResult;
 import com.pubnub.api.models.consumer.push.PNPushRemoveAllChannelsResult;
@@ -79,6 +84,8 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String LIST_PUSH_NOTIFICATION_CHANNELS_METHOD = "listPushNotificationChannels";
     private static final String REMOVE_PUSH_NOTIFICATIONS_FROM_CHANNELS_METHOD = "removePushNotificationsFromChannels";
     private static final String REMOVE_ALL_PUSH_NOTIFICATIONS_FROM_DEVICE_AITH_PUSH_TOKEN_METHOD = "removeAllPushNotificationsFromDeviceWithPushToken";
+
+    private static final String SIGNAL_METHOD = "signal";
 
     private static final String CLIENT_ID_KEY = "clientId";
     private static final String CHANNELS_KEY = "channels";
@@ -174,6 +181,7 @@ public class PubnubPlugin implements MethodCallHandler {
                 put(PNOperationType.PNGetState, 20);
                 put(PNOperationType.PNAccessManagerAudit, 0);
                 put(PNOperationType.PNAccessManagerGrant, 0);
+                put(PNOperationType.PNSignalOperation, 21);
             }};
 
     private Map<String, PubNub> clients = new HashMap<>();
@@ -284,6 +292,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 break;
             case REMOVE_ALL_PUSH_NOTIFICATIONS_FROM_DEVICE_AITH_PUSH_TOKEN_METHOD:
                 handleRemoveAllPushNotificationsFromDeviceWithPushToken(clientId, call, result);
+                break;
+            case SIGNAL_METHOD:
+                handleSignal(clientId, call, result);
                 break;
             default:
                 result.notImplemented();
@@ -749,6 +760,31 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
+    private void handleSignal(final String clientId, MethodCall call, Result result) {
+        List<String> channels = call.argument(CHANNELS_KEY);
+        if (channels == null || channels.isEmpty()) {
+            throw new IllegalArgumentException("Signal channels can't be null or empty");
+        }
+        Map message = call.argument(MESSAGE_KEY);
+        if (message == null || message.isEmpty()) {
+            throw new IllegalArgumentException("Signal message can't be null or empty");
+        }
+
+        PubNub client = getClient(clientId, call);
+
+        for (String channel : channels) {
+            client.signal().channel(channel).message(message).async(new PNCallback<PNPublishResult>() {
+                @Override
+                public void onResponse(PNPublishResult result, PNStatus status) {
+                    handleStatus(clientId, status);
+                }
+            });
+        }
+
+
+        result.success(true);
+    }
+
     private void handleStatus(String clientId, PNStatus status) {
 
         System.out.println("Client " + clientId + " status: " + status);
@@ -787,6 +823,32 @@ public class PubnubPlugin implements MethodCallHandler {
             System.out.println("CLIENT " + clientId + " IN PRESENCE");
             presenceStreamHandler.sendPresence(clientId, presence);
         }
+
+        @Override
+        public void signal(PubNub pubnub, PNSignalResult signal) {
+            System.out.println("CLIENT " + clientId + " IN SIGNAL");
+            messageStreamHandler.sendSignal(clientId, signal);
+        }
+
+        @Override
+        public void user(PubNub pubnub, PNUserResult pnUserResult) {
+
+        }
+
+        @Override
+        public void space(PubNub pubnub, PNSpaceResult pnSpaceResult) {
+
+        }
+
+        @Override
+        public void membership(PubNub pubnub, PNMembershipResult pnMembershipResult) {
+
+        }
+
+        @Override
+        public void messageAction(PubNub pubnub, PNMessageActionResult pnMessageActionResult) {
+
+        }
     }
 
 
@@ -815,6 +877,25 @@ public class PubnubPlugin implements MethodCallHandler {
                     put(UUID_KEY, message.getPublisher());
                     put(CHANNEL_KEY, message.getChannel());
                     put(MESSAGE_KEY, message.getMessage().toString());
+                }};
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        MessageStreamHandler.super.sink.success(map);
+                    }
+                });
+
+            }
+        }
+
+        void sendSignal(final String clientId, final PNSignalResult signal) {
+            if (super.sink != null) {
+                System.out.println("publisher: " + signal.getPublisher());
+                final Map<String, Object> map = new HashMap<String, Object>() {{
+                    put(CLIENT_ID_KEY, clientId);
+                    put(UUID_KEY, signal.getPublisher());
+                    put(CHANNEL_KEY, signal.getChannel());
+                    put(MESSAGE_KEY, signal.getMessage().toString());
                 }};
                 executor.execute(new Runnable() {
                     @Override
