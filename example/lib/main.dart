@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pubnub/pubnub.dart';
@@ -12,8 +13,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _firstUserClient = PubNub(PubNubConfig('pub-c-xxx', 'sub-c-xxx', uuid: 'a0a80f2d-b48d-460c-b3bd-a244a877df1f'));
-  final _secondUserClient = PubNub(PubNubConfig('pub-c-yyy', 'sub-c-yyy',
+
+  final _firstUserClient = PubNub(PubNubConfig(
+      'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
+      uuid: 'a0a80f2d-b48d-460c-b3bd-a244a877df1f'));
+  final _secondUserClient = PubNub(PubNubConfig(
+      'pub-c-9235bd41-31e7-405c-b1bd-8130e8138c88', 'sub-c-6de4a01a-e54a-11e9-9f1b-ce77373a3518',
+
       presenceTimeout: 120,
       uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007',
       filter: 'uuid != "127c1ab5-fc7f-4c46-8460-3207b6782007"'));
@@ -60,6 +66,7 @@ class _MyAppState extends State<MyApp> {
         print("onResume: $message");
       },
     );
+
   }
 
   void iOSPermission() {
@@ -69,7 +76,13 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  Future sendEvent(String eventName, String message) async {}
+  Future sendEvent(String eventName, String message) async {
+    Dio dio = new Dio(); // with default Options
+
+    await dio.post("http://logs-01.loggly.com/inputs/336a5a72-0233-4403-9218-405f5516f266/tag/http",
+        data: {"flutter_pubnub": eventName, "message": message});
+  }
+
 
   @override
   void dispose() {
@@ -214,6 +227,7 @@ class _MyAppState extends State<MyApp> {
                     _firebaseMessaging.getToken().then((token) {
                       print("Token: $token");
                       _firstUserClient.addPushNotificationsOnChannels(PushType.FCM, token, ['Channel']);
+                      sendEvent('ADD CHANNELS', ['Channel'].toList().toString());
                     });
                   },
                   child: Text('Add')),
@@ -224,7 +238,7 @@ class _MyAppState extends State<MyApp> {
                       print("Token: $token");
                       _firstUserClient.listPushNotificationChannels(PushType.FCM, token).then((channels) {
                         print("Push Notes Channels: $channels");
-                        sendEvent('PUSH CHANNELS', channels.toList().toString());
+                        sendEvent('LIST CHANNELS', channels.toList().toString());
                       });
                     });
                   },
@@ -235,6 +249,7 @@ class _MyAppState extends State<MyApp> {
                     _firebaseMessaging.getToken().then((token) {
                       print("Token: $token");
                       _firstUserClient.removePushNotificationsFromChannels(PushType.FCM, token, ['Channel']);
+                      sendEvent('REMOVE CHANNELS', ['Channel'].toList().toString());
                     });
                   },
                   child: Text('Remove')),
@@ -244,10 +259,22 @@ class _MyAppState extends State<MyApp> {
                     _firebaseMessaging.getToken().then((token) {
                       print("Token: $token");
                       _firstUserClient.removeAllPushNotificationsFromDeviceWithPushToken(PushType.FCM, token);
+                      sendEvent('REMOVE ALL CHANNELS', token);
                     });
                   },
                   child: Text('Remove All')),
             ]),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: <Widget>[
+              FlatButton(
+                  color: Colors.black12,
+                  onPressed: () {
+                    _firebaseMessaging.getToken().then((token) {
+                      print("Token: $token");
+                      sendEvent('TOKEN', token);
+                    });
+                  },
+                  child: Text('Token')),
+            ])
           ]),
         ),
       );
