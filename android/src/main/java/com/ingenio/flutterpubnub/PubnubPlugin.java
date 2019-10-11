@@ -870,32 +870,20 @@ public class PubnubPlugin implements MethodCallHandler {
     public static class MessageStreamHandler extends BaseStreamHandler {
 
         void sendMessage(final String clientId, final PNMessageResult message) {
-            if (super.sink != null) {
-                System.out.println("publisher: " + message.getPublisher());
-                final Map<String, Object> map = new HashMap<String, Object>() {{
-                    put(CLIENT_ID_KEY, clientId);
-                    put(UUID_KEY, message.getPublisher());
-                    put(CHANNEL_KEY, message.getChannel());
-                    put(MESSAGE_KEY, message.getMessage().toString());
-                }};
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        MessageStreamHandler.super.sink.success(map);
-                    }
-                });
-
-            }
+            send(clientId, message.getPublisher(), message.getChannel(), message.getMessage().toString());
         }
 
         void sendSignal(final String clientId, final PNSignalResult signal) {
+            send(clientId, signal.getPublisher(), signal.getChannel(), signal.getMessage().toString());
+        }
+
+        void send(final String clientId, final String publisher, final String channel, final String message) {
             if (super.sink != null) {
-                System.out.println("publisher: " + signal.getPublisher());
                 final Map<String, Object> map = new HashMap<String, Object>() {{
                     put(CLIENT_ID_KEY, clientId);
-                    put(UUID_KEY, signal.getPublisher());
-                    put(CHANNEL_KEY, signal.getChannel());
-                    put(MESSAGE_KEY, signal.getMessage().toString());
+                    put(UUID_KEY, publisher);
+                    put(CHANNEL_KEY, channel);
+                    put(MESSAGE_KEY,message);
                 }};
                 executor.execute(new Runnable() {
                     @Override

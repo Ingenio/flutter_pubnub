@@ -851,35 +851,21 @@ typedef enum {
 }
 
 - (void) sendMessage:(PNMessageResult *)message clientId:(NSString *)clientId {
-    if(self.eventSink) {
-        
-        NSString *jsonString = @"";
-        
-        if([message.data.message isKindOfClass:[NSDictionary class]]) {
-            NSError *error;
-            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message.data.message
-                                                    options:0
-                                                    error:&error];
-
-            if (jsonData) {
-               jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-            }
-        }
-        
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: message.uuid, CHANNEL_KEY: message.data.channel, MESSAGE_KEY: jsonString};
-
-        self.eventSink(result);
-    }
+   [self send:clientId uuid:message.uuid channel:message.data.channel message:message.data.message];
 }
 
 - (void) sendSignal:(PNSignalResult *)signal clientId:(NSString *)clientId {
+    [self send:clientId uuid:signal.uuid channel:signal.data.channel message:signal.data.message];
+}
+
+- (void) send:(NSString *)clientId uuid:(NSString *)uuid channel:(NSString *)channel  message: (id)message {
     if(self.eventSink) {
         
         NSString *jsonString = @"";
         
-        if([signal.data.message isKindOfClass:[NSDictionary class]]) {
+        if([message isKindOfClass:[NSDictionary class]]) {
             NSError *error;
-            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:signal.data.message
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message
                                                     options:0
                                                     error:&error];
 
@@ -888,11 +874,12 @@ typedef enum {
             }
         }
         
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: signal.uuid, CHANNEL_KEY: signal.data.channel, MESSAGE_KEY: jsonString};
+        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: uuid, CHANNEL_KEY: channel, MESSAGE_KEY: jsonString};
 
         self.eventSink(result);
     }
 }
+
 
 @end
 
