@@ -312,7 +312,7 @@ _client.removeAllPushNotificationsFromDeviceWithPushToken(PushType.FCM, token);
 
 ## Signals
 
-Signals allow to send small payloads (30 butes max) in a very efficient and cost effective way.
+Signals allow to send small payloads (30 bytes max) in a very efficient and cost effective way.
 
 ``` dart
 
