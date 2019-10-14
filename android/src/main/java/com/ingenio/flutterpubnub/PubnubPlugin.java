@@ -240,26 +240,21 @@ public class PubnubPlugin implements MethodCallHandler {
             case SUBSCRIBE_METHOD:
                 handleSubscribe(clientId, call, result);
                 break;
-
             case PUBLISH_METHOD:
                 handlePublish(clientId, call, result);
                 break;
-
             case PRESENCE_METHOD:
                 handlePresence(clientId, call, result);
                 break;
-
             case UNSUBSCRIBE_METHOD:
                 handleUnsubscribe(clientId, call, result);
                 break;
             case DISPOSE_METHOD:
-                handleDispose(result);
+                handleDispose(clientId, call, result);
                 break;
-
             case UUID_METHOD:
                 handleUuid(clientId, call, result);
                 break;
-
             case ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD:
                 handleAddChannelsToChannelGroup(clientId, call, result);
                 break;
@@ -709,13 +704,12 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
-    private void handleDispose(Result result) {
-        for (PubNub client : clients.values()) {
-            client.unsubscribeAll();
-            client.disconnect();
-            client.destroy();
-        }
-        clients.clear();
+    private void handleDispose(String clientId, MethodCall call, Result result) {
+        PubNub client = getClient(clientId, call);
+        client.unsubscribeAll();
+        client.disconnect();
+        client.destroy();
+        clients.remove(clientId);
         result.success(true);
     }
 
