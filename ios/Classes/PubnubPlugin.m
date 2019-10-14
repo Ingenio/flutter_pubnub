@@ -31,6 +31,7 @@ NSString *const ADD_PUSH_NOTIFICATIONS_ON_CHANNELS_METHOD = @"addPushNotificatio
 NSString *const LIST_PUSH_NOTIFICATION_CHANNELS_METHOD = @"listPushNotificationChannels";
 NSString *const REMOVE_PUSH_NOTIFICATIONS_FROM_CHANNELS_METHOD = @"removePushNotificationsFromChannels";
 NSString *const REMOVE_ALL_PUSH_NOTIFICATIONS_FROM_DEVICE_AITH_PUSH_TOKEN_METHOD = @"removeAllPushNotificationsFromDeviceWithPushToken";
+NSString *const SIGNAL_METHOD = @"signal";
 
 NSString *const CLIENT_ID_KEY = @"clientId";
 NSString *const CHANNELS_KEY = @"channels";
@@ -126,6 +127,8 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
             [self handleRemovePushNotificationsFromChannels:call clientId:clientId result:result];
         } else if  ([REMOVE_ALL_PUSH_NOTIFICATIONS_FROM_DEVICE_AITH_PUSH_TOKEN_METHOD isEqualToString:call.method]) {
             [self handleRemoveAllPushNotificationsFromDeviceWithPushToken:call clientId:clientId result:result];
+        } else if  ([SIGNAL_METHOD isEqualToString:call.method]) {
+            [self handleSignal:call clientId:clientId result:result];
         }
         
         else {
@@ -614,6 +617,32 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     result(NULL);
 }
 
+- (void) handleSignal:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    NSDictionary *message = call.arguments[MESSAGE_KEY];
+    
+    if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Signal channels can't be null or empty" userInfo:nil];
+    }
+    
+    if((id)message == [NSNull null] || message == NULL || [message count] == 0) {
+        @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Signal message can't be null or empty" userInfo:nil];
+    }
+    
+    PubNub *client = [self getClient:clientId call:call];
+    
+    __weak __typeof(self) weakSelf = self;
+    
+    for(NSString *channel in channels) {
+        [client signal:message channel:channel withCompletion:^(PNSignalStatus *status) {
+            __strong __typeof(self) strongSelf = weakSelf;
+            [strongSelf handleStatus:status clientId:clientId];
+        }];
+    }
+    
+    result(NULL);
+}
+
 - (void) handlePresence:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary<NSString*, NSString*> *state = call.arguments[STATE_KEY];
@@ -685,6 +714,11 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 - (void)client:(PubNub *)client didReceiveMessage:(PNMessageResult *)message {
     NSLog(@"ClientCallback didReceiveMessage");
     [self.messageStreamHandler sendMessage:message clientId:[self getClientId:client]];
+}
+
+- (void)client:(PubNub *)client didReceiveSignal:(PNSignalResult *)signal {
+    NSLog(@"ClientCallback didReceiveSignal");
+    [self.messageStreamHandler sendSignal:signal clientId:[self getClientId:client]];
 }
 
 // New presence event handling.
@@ -795,6 +829,8 @@ typedef enum {
             return [NSNumber numberWithInt:18];
         case PNTimeOperation:
             return [NSNumber numberWithInt:19];
+        case PNSignalOperation:
+            return [NSNumber numberWithInt:21];
         default:
             return [NSNumber numberWithInt:0];
     }
@@ -815,13 +851,21 @@ typedef enum {
 }
 
 - (void) sendMessage:(PNMessageResult *)message clientId:(NSString *)clientId {
+   [self send:clientId uuid:message.uuid channel:message.data.channel message:message.data.message];
+}
+
+- (void) sendSignal:(PNSignalResult *)signal clientId:(NSString *)clientId {
+    [self send:clientId uuid:signal.uuid channel:signal.data.channel message:signal.data.message];
+}
+
+- (void) send:(NSString *)clientId uuid:(NSString *)uuid channel:(NSString *)channel  message: (id)message {
     if(self.eventSink) {
         
         NSString *jsonString = @"";
         
-        if([message.data.message isKindOfClass:[NSDictionary class]]) {
+        if([message isKindOfClass:[NSDictionary class]]) {
             NSError *error;
-            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message.data.message
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message
                                                     options:0
                                                     error:&error];
 
@@ -830,11 +874,12 @@ typedef enum {
             }
         }
         
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: message.uuid, CHANNEL_KEY: message.data.channel, MESSAGE_KEY: jsonString};
+        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: uuid, CHANNEL_KEY: channel, MESSAGE_KEY: jsonString};
 
         self.eventSink(result);
     }
 }
+
 
 @end
 
