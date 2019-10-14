@@ -60,7 +60,7 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 * [Publishing to channels](#Publishing-to-channels)
 * [Handle presence](#Handle-presence)
 * [Subscribe to PubNub events](#Subscribe-to-PubNub-Events)
-* [Channel Groups](#Channels-Groups)
+* [Channel Groups](#Channel-Groups)
 * [Retrieve history](#Retrieve-history)
 * [Push Notifications](#Push-Notifications)
 * [Signals](#Signals)
