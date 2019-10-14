@@ -60,12 +60,7 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 * [Publishing to channels](#Publishing-to-channels)
 * [Handle presence](#Handle-presence)
 * [Subscribe to PubNub events](#Subscribe-to-PubNub-Events)
-* [Adding channels to a channel group](#Adding-channels-to-a-channel-group)
-* [List channels belonging to a channel group](#List-channels-belonging-to-a-channel-group)
-* [Remove channels from a channel group](#Remove-channels-from-a-channel-group)
-* [Delete a channel group](#Delete-a-channel-group)
-* [Subscribe to channel groups](#Subscribe-to-channel-groups)
-* [Unsubscribe from channel groups](#Unsubscribe-from-channel-groups)
+* [Channel Groups](#Channels-Groups)
 * [Retrieve history](#Retrieve-history)
 * [Push Notifications](#Push-Notifications)
 * [Signals](#Signals)
@@ -205,9 +200,13 @@ _client.onErrorReceived.listen((error) => print('Error:$error'));
 
 ```
 
-## Adding channels to a channel group
+## Channel Groups
 
 Channel groups access are handled by the PubNub Access Manager.
+
+### Adding channels to a channel group
+
+
 
 ``` dart
 
@@ -215,7 +214,7 @@ _client.addChannelsToChannelGroup('Group1', ['Channel', 'Channel2']);
 
 ```
 
-## List channels belonging to a channel group
+### List channels belonging to a channel group
 
 ``` dart
 
@@ -225,7 +224,7 @@ _client.listChannelsForChannelGroup('Group1').then((channels) {
                         
 ```
 
-## Remove channels from a channel group
+### Remove channels from a channel group
 
 ``` dart
 
@@ -233,7 +232,7 @@ _client.listChannelsForChannelGroup('Group1').then((channels) {
                         
 ```
 
-## Delete a channel group
+### Delete a channel group
 
 ``` dart
 
@@ -241,7 +240,7 @@ _client.deleteChannelGroup('Group1');
 
 ```
 
-## Subscribe to channel groups
+### Subscribe to channel groups
 
 ``` dart
 
@@ -249,7 +248,7 @@ _client.subscribeToChannelGroups(['Group1']);
 
 ```
 
-## Unsubscribe from channel groups
+### Unsubscribe from channel groups
 
 ``` dart
 
