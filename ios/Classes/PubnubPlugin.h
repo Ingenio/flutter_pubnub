@@ -19,6 +19,7 @@
 @property (nonatomic, strong) FlutterEventSink eventSink;
 
 - (void) sendMessage:(PNMessageResult *)message clientId:(NSString *)clientId;
+- (void) sendSignal:(PNSignalResult *)signal clientId:(NSString *)clientId;
 
 @end
 

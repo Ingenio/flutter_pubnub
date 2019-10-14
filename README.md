@@ -68,6 +68,7 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 * [Unsubscribe from channel groups](#Unsubscribe-from-channel-groups)
 * [Retrieve history](#Retrieve-history)
 * [Push Notifications](#Push-Notifications)
+* [Signals](#Signals)
 * [Cleanup](#Cleanup)
 
 ## Creating one or more clients
@@ -309,6 +310,17 @@ Removing all channels from push notifications.
 _client.removeAllPushNotificationsFromDeviceWithPushToken(PushType.FCM, token);
 
 ```
+
+## Signals
+
+Signals allow to send small payloads (30 butes max) in a very efficient and cost effective way.
+
+``` dart
+
+_client.signal(['Channel2'], {'signal': 'Hello Signal'});
+
+```
+
 
 ## Cleanup
 
