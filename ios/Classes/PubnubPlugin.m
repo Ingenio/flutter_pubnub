@@ -574,12 +574,9 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 
 - (void) handleDispose:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
-    
-    for(PubNub *client in [self.clients allValues]) {
-        [client unsubscribeFromAll];
-    }
-    
-    [self.clients removeAllObjects];
+    PubNub *client = [self getClient:clientId call:call];
+    [client unsubscribeFromAll];
+    [self.clients removeObjectForKey:clientId];
     
     result(NULL);
 }
