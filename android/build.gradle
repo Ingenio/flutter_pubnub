@@ -34,4 +34,12 @@ android {
     dependencies {
         implementation 'com.pubnub:pubnub-gson:4.29.2'
     }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            useProguard true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
 }
