@@ -25,3 +25,7 @@
 ## [0.2.0]
 
 * Added PubNub signals
+
+## [0.2.1]
+
+* Updated PubNub dependency to latest (4.12.0)
