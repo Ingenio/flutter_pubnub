@@ -26,6 +26,15 @@
 
 * Added PubNub signals
 
-## [0.2.1]
+## [0.3.0]
+
+* Fixed crashes caused by code obfuscation. 
+* Added Proguard rules
+
+## [0.3.1]
+
+* File format warning removed
+
+## [0.3.2]
 
 * Updated PubNub dependency to latest (4.12.0)
