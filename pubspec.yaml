@@ -1,9 +1,6 @@
 name: flutter_pubnub
 description: A cross platform plugin for creating real time messaging applications with PubNub
-version: 0.2.0
-authors:
-  - Olivier Brand <obrand@ingenio.com>
-  - Yegor Logachev <egor@itomy.ch>
+version: 0.3.0
 homepage: https://github.com/Ingenio/flutter_pubnub
 
 environment:

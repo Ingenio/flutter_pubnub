@@ -33,7 +33,7 @@ PNConfig features:
 
 The plugin follows as much as possible the naming conventions PubNub exposes via their respective iOS and Android SDK.
 
-Note: version 0.1.2 has breaking changes. unsubscribe, presence and publish methods are now accepting an array of channels rather than just one channel.
+Note: version 0.2.0 had a bug related to missing proguard rules, causing crashes when the library was initialized.
 
 ## Easy setup
 

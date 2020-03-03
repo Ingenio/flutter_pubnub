@@ -25,3 +25,8 @@
 ## [0.2.0]
 
 * Added PubNub signals
+
+## [0.3.0]
+
+* Fixed crashes caused by code obfuscation. 
+* Added Proguard rules
