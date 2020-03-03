@@ -30,3 +30,7 @@
 
 * Fixed crashes caused by code obfuscation. 
 * Added Proguard rules
+
+## [0.3.1]
+
+* File format warning removed
