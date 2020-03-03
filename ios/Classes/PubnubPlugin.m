@@ -239,27 +239,26 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     __weak __typeof(self) weakSelf = self;
     
+    id preparedToken;
+    PNPushType pnPushType;
     if([pushType integerValue] == APNS) {
-        client.push().enable().channels(channels)
-        .apnsToken([pushToken dataUsingEncoding:NSUTF8StringEncoding])
-        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
-            __strong __typeof(self) strongSelf = weakSelf;
-            result(NULL);
-            if(status != NULL) {
-                [strongSelf handleStatus:status clientId:clientId];
-            }
-        });
+        preparedToken = [pushToken dataUsingEncoding:NSUTF8StringEncoding];
+        pnPushType = PNAPNSPush;
     } else {
-        client.push().enable().channels(channels)
-        .fcmToken(pushToken)
-        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
-            __strong __typeof(self) strongSelf = weakSelf;
-            result(NULL);
-            if(status != NULL) {
-                [strongSelf handleStatus:status clientId:clientId];
-            }
-        });
+        preparedToken = pushToken;
+        pnPushType = PNFCMPush;
     }
+    client.push().enable().channels(channels)
+    .token(preparedToken)
+    .pushType(pnPushType)
+    .performWithCompletion(^(PNAcknowledgmentStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        result(NULL);
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+    });
+
 }
 
 - (void) handleListPushNotificationChannels:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
@@ -278,25 +277,23 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     __weak __typeof(self) weakSelf = self;
     
+    id preparedToken;
+    PNPushType pnPushType;
     if([pushType integerValue] == APNS) {
-        client.push().audit().apnsToken([pushToken dataUsingEncoding:NSUTF8StringEncoding])
-        .performWithCompletion(^(PNAPNSEnabledChannelsResult *res, PNErrorStatus *status) {
-            __strong __typeof(self) strongSelf = weakSelf;
-            result([[res data] channels]);
-            if(status != NULL) {
-                [strongSelf handleStatus:status clientId:clientId];
-            }
-        });
+        preparedToken = [pushToken dataUsingEncoding:NSUTF8StringEncoding];
+        pnPushType = PNAPNSPush;
     } else {
-        client.push().audit().fcmToken(pushToken)
-        .performWithCompletion(^(PNAPNSEnabledChannelsResult *res, PNErrorStatus *status) {
-            __strong __typeof(self) strongSelf = weakSelf;
-            result([[res data] channels]);
-            if(status != NULL) {
-                [strongSelf handleStatus:status clientId:clientId];
-            }
-        });
+        preparedToken = pushToken;
+        pnPushType = PNFCMPush;
     }
+    client.push().audit().token(preparedToken).pushType(pnPushType)
+    .performWithCompletion(^(PNAPNSEnabledChannelsResult *res, PNErrorStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        result([[res data] channels]);
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+    });
     
 }
 
@@ -321,27 +318,25 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     __weak __typeof(self) weakSelf = self;
     
+    id preparedToken;
+    PNPushType pnPushType;
     if([pushType integerValue] == APNS) {
-        client.push().disable().channels(channels)
-        .apnsToken([pushToken dataUsingEncoding:NSUTF8StringEncoding])
-        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
-            __strong __typeof(self) strongSelf = weakSelf;
-            result(NULL);
-            if(status != NULL) {
-                [strongSelf handleStatus:status clientId:clientId];
-            }
-        });
+        preparedToken = [pushToken dataUsingEncoding:NSUTF8StringEncoding];
+        pnPushType = PNAPNSPush;
     } else {
-        client.push().disable().channels(channels)
-        .fcmToken(pushToken)
-        .performWithCompletion(^(PNAcknowledgmentStatus *status) {
-            __strong __typeof(self) strongSelf = weakSelf;
-            result(NULL);
-            if(status != NULL) {
-                [strongSelf handleStatus:status clientId:clientId];
-            }
-        });
+        preparedToken = pushToken;
+        pnPushType = PNFCMPush;
     }
+    client.push().disable().channels(channels)
+    .token(preparedToken)
+    .pushType(pnPushType)
+    .performWithCompletion(^(PNAcknowledgmentStatus *status) {
+        __strong __typeof(self) strongSelf = weakSelf;
+        result(NULL);
+        if(status != NULL) {
+            [strongSelf handleStatus:status clientId:clientId];
+        }
+    });
 }
 
 - (void) handleRemoveAllPushNotificationsFromDeviceWithPushToken:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
