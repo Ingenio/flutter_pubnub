@@ -34,3 +34,7 @@
 ## [0.3.1]
 
 * File format warning removed
+
+## [0.3.2]
+
+* Updated PubNub dependency to latest (4.12.0)
