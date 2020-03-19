@@ -8,7 +8,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.pubnub.api.PNConfiguration;
 import com.pubnub.api.PubNub;
-import com.pubnub.api.PubNubException;
 import com.pubnub.api.callbacks.PNCallback;
 import com.pubnub.api.callbacks.SubscribeCallback;
 import com.pubnub.api.enums.PNOperationType;
@@ -37,8 +36,6 @@ import com.pubnub.api.models.consumer.push.PNPushRemoveAllChannelsResult;
 import com.pubnub.api.models.consumer.push.PNPushRemoveChannelResult;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -130,7 +127,8 @@ public class PubnubPlugin implements MethodCallHandler {
         }
 
         public PNPushType getPushType() {
-            return PushType.APNS.getPushTypeAsNumber() == pushTypeNumber ? PNPushType.APNS : PNPushType.GCM;
+            return PushType.APNS.getPushTypeAsNumber().equals(pushTypeNumber) ? PNPushType.APNS :
+                    PNPushType.FCM;
         }
     }
 
@@ -298,7 +296,7 @@ public class PubnubPlugin implements MethodCallHandler {
     }
 
     private PNPushType getPushType(Integer pushType) {
-        return PushType.APNS.getPushTypeAsNumber() == pushType ? PushType.APNS.getPushType() : PushType.GCM.getPushType();
+        return PushType.APNS.getPushTypeAsNumber().equals(pushType) ? PushType.APNS.getPushType() : PushType.GCM.getPushType();
     }
 
     private void handleAddPushNotificationsOnChannels(final String clientId, MethodCall call, final Result result) {
@@ -334,9 +332,7 @@ public class PubnubPlugin implements MethodCallHandler {
                         System.out.println("handleAddPushNotificationsOnChannels status: " + status);
 
                         result.success(!status.isError());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
     }
@@ -363,9 +359,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     @Override
                     public void onResponse(PNPushListProvisionsResult res, PNStatus status) {
                         result.success(res.getChannels());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
     }
@@ -398,9 +392,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     @Override
                     public void onResponse(PNPushRemoveChannelResult res, PNStatus status) {
                         result.success(!status.isError());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
 
@@ -428,9 +420,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     @Override
                     public void onResponse(PNPushRemoveAllChannelsResult res, PNStatus status) {
                         result.success(!status.isError());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
     }
@@ -461,16 +451,12 @@ public class PubnubPlugin implements MethodCallHandler {
                 .async(new PNCallback<PNHistoryResult>() {
                     @Override
                     public void onResponse(PNHistoryResult res, PNStatus status) {
-
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
 
                         List<String> items = new ArrayList<>();
 
                         if(res != null) {
                             for (PNHistoryItemResult item : res.getMessages()) {
-                                Map map = new HashMap<String, Object>();
                                 String message = "{\"message\": " +  item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
 
                                 items.add(message); // returns something like:
@@ -502,9 +488,7 @@ public class PubnubPlugin implements MethodCallHandler {
             @Override
             public void onResponse(PNChannelGroupsRemoveChannelResult res, PNStatus status) {
                 result.success(!status.isError());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
@@ -533,9 +517,7 @@ public class PubnubPlugin implements MethodCallHandler {
             @Override
             public void onResponse(PNChannelGroupsAddChannelResult res, PNStatus status) {
                 result.success(!status.isError());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
@@ -555,9 +537,7 @@ public class PubnubPlugin implements MethodCallHandler {
             @Override
             public void onResponse(PNChannelGroupsAllChannelsResult res, PNStatus status) {
                 result.success(res.getChannels());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
@@ -577,9 +557,7 @@ public class PubnubPlugin implements MethodCallHandler {
             @Override
             public void onResponse(PNChannelGroupsDeleteGroupResult res, PNStatus status) {
                 result.success(!status.isError());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
