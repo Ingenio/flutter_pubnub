@@ -38,3 +38,7 @@
 ## [0.3.2]
 
 * Updated PubNub dependency to latest (4.12.0)
+
+## [0.4.0]
+
+* Update PubNub dependency to latest Android SDK 4.32, solving network related issues
