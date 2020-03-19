@@ -32,7 +32,7 @@ android {
         disable 'InvalidPackage'
     }
     dependencies {
-        implementation 'com.pubnub:pubnub-gson:4.29.2'
+        implementation 'com.pubnub:pubnub-gson:4.31.0'
     }
 
     buildTypes {

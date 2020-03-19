@@ -8,7 +8,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.pubnub.api.PNConfiguration;
 import com.pubnub.api.PubNub;
-import com.pubnub.api.PubNubException;
 import com.pubnub.api.callbacks.PNCallback;
 import com.pubnub.api.callbacks.SubscribeCallback;
 import com.pubnub.api.enums.PNOperationType;
@@ -36,9 +35,9 @@ import com.pubnub.api.models.consumer.push.PNPushListProvisionsResult;
 import com.pubnub.api.models.consumer.push.PNPushRemoveAllChannelsResult;
 import com.pubnub.api.models.consumer.push.PNPushRemoveChannelResult;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -130,7 +129,8 @@ public class PubnubPlugin implements MethodCallHandler {
         }
 
         public PNPushType getPushType() {
-            return PushType.APNS.getPushTypeAsNumber() == pushTypeNumber ? PNPushType.APNS : PNPushType.GCM;
+            return PushType.APNS.getPushTypeAsNumber().equals(pushTypeNumber) ? PNPushType.APNS :
+                    PNPushType.FCM;
         }
     }
 
@@ -225,7 +225,7 @@ public class PubnubPlugin implements MethodCallHandler {
     }
 
     @Override
-    public void onMethodCall(MethodCall call, Result result) {
+    public void onMethodCall(@NotNull MethodCall call, @NotNull Result result) {
         try {
             handleMethodCall(call, result);
         } catch (Exception e) {
@@ -298,7 +298,7 @@ public class PubnubPlugin implements MethodCallHandler {
     }
 
     private PNPushType getPushType(Integer pushType) {
-        return PushType.APNS.getPushTypeAsNumber() == pushType ? PushType.APNS.getPushType() : PushType.GCM.getPushType();
+        return PushType.APNS.getPushTypeAsNumber().equals(pushType) ? PushType.APNS.getPushType() : PushType.GCM.getPushType();
     }
 
     private void handleAddPushNotificationsOnChannels(final String clientId, MethodCall call, final Result result) {
@@ -328,15 +328,13 @@ public class PubnubPlugin implements MethodCallHandler {
                 .deviceId(pushToken)
                 .async(new PNCallback<PNPushAddChannelResult>() {
                     @Override
-                    public void onResponse(PNPushAddChannelResult res, PNStatus status) {
+                    public void onResponse(PNPushAddChannelResult res, @NotNull PNStatus status) {
                         System.out.println("handleAddPushNotificationsOnChannels result: " + res);
                         System.out.println("handleAddPushNotificationsOnChannels error: " + status.isError());
                         System.out.println("handleAddPushNotificationsOnChannels status: " + status);
 
                         result.success(!status.isError());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
     }
@@ -361,11 +359,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 .pushType(getPushType(pushType))
                 .async(new PNCallback<PNPushListProvisionsResult>() {
                     @Override
-                    public void onResponse(PNPushListProvisionsResult res, PNStatus status) {
+                    public void onResponse(PNPushListProvisionsResult res, @NotNull PNStatus status) {
                         result.success(res.getChannels());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
     }
@@ -396,11 +392,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 .pushType(getPushType(pushType))
                 .async(new PNCallback<PNPushRemoveChannelResult>() {
                     @Override
-                    public void onResponse(PNPushRemoveChannelResult res, PNStatus status) {
+                    public void onResponse(PNPushRemoveChannelResult res, @NotNull PNStatus status) {
                         result.success(!status.isError());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
 
@@ -426,11 +420,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 .pushType(getPushType(pushType))
                 .async(new PNCallback<PNPushRemoveAllChannelsResult>() {
                     @Override
-                    public void onResponse(PNPushRemoveAllChannelsResult res, PNStatus status) {
+                    public void onResponse(PNPushRemoveAllChannelsResult res, @NotNull PNStatus status) {
                         result.success(!status.isError());
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                        handleStatus(clientId, status);
                     }
                 });
     }
@@ -460,17 +452,13 @@ public class PubnubPlugin implements MethodCallHandler {
                 .includeTimetoken(true)
                 .async(new PNCallback<PNHistoryResult>() {
                     @Override
-                    public void onResponse(PNHistoryResult res, PNStatus status) {
-
-                        if (status != null) {
-                            handleStatus(clientId, status);
-                        }
+                    public void onResponse(PNHistoryResult res, @NotNull PNStatus status) {
+                        handleStatus(clientId, status);
 
                         List<String> items = new ArrayList<>();
 
                         if(res != null) {
                             for (PNHistoryItemResult item : res.getMessages()) {
-                                Map map = new HashMap<String, Object>();
                                 String message = "{\"message\": " +  item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
 
                                 items.add(message); // returns something like:
@@ -500,11 +488,9 @@ public class PubnubPlugin implements MethodCallHandler {
 
         client.removeChannelsFromChannelGroup().channelGroup(channelGroup).channels(channels).async(new PNCallback<PNChannelGroupsRemoveChannelResult>() {
             @Override
-            public void onResponse(PNChannelGroupsRemoveChannelResult res, PNStatus status) {
+            public void onResponse(PNChannelGroupsRemoveChannelResult res, @NotNull PNStatus status) {
                 result.success(!status.isError());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
@@ -531,11 +517,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 .channelGroup(channelGroup)
                 .channels(channels).async(new PNCallback<PNChannelGroupsAddChannelResult>() {
             @Override
-            public void onResponse(PNChannelGroupsAddChannelResult res, PNStatus status) {
+            public void onResponse(PNChannelGroupsAddChannelResult res, @NotNull PNStatus status) {
                 result.success(!status.isError());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
@@ -553,11 +537,9 @@ public class PubnubPlugin implements MethodCallHandler {
 
         client.listChannelsForChannelGroup().channelGroup(channelGroup).async(new PNCallback<PNChannelGroupsAllChannelsResult>() {
             @Override
-            public void onResponse(PNChannelGroupsAllChannelsResult res, PNStatus status) {
+            public void onResponse(PNChannelGroupsAllChannelsResult res, @NotNull PNStatus status) {
                 result.success(res.getChannels());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
@@ -575,11 +557,9 @@ public class PubnubPlugin implements MethodCallHandler {
 
         client.deleteChannelGroup().channelGroup(channelGroup).async(new PNCallback<PNChannelGroupsDeleteGroupResult>() {
             @Override
-            public void onResponse(PNChannelGroupsDeleteGroupResult res, PNStatus status) {
+            public void onResponse(PNChannelGroupsDeleteGroupResult res, @NotNull PNStatus status) {
                 result.success(!status.isError());
-                if (status != null) {
-                    handleStatus(clientId, status);
-                }
+                handleStatus(clientId, status);
             }
         });
     }
@@ -697,7 +677,7 @@ public class PubnubPlugin implements MethodCallHandler {
         System.out.println("SET PRESENCE STATE FOR CLIENT: " + clientId);
         client.setPresenceState().channels(channels).state(state).async(new PNCallback<PNSetStateResult>() {
             @Override
-            public void onResponse(final PNSetStateResult result, PNStatus status) {
+            public void onResponse(final PNSetStateResult result, @NotNull PNStatus status) {
                 handleStatus(clientId, status);
             }
         });
@@ -744,7 +724,7 @@ public class PubnubPlugin implements MethodCallHandler {
         for (String channel : channels) {
             client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
                 @Override
-                public void onResponse(PNPublishResult result, PNStatus status) {
+                public void onResponse(PNPublishResult result, @NotNull PNStatus status) {
                     handleStatus(clientId, status);
                 }
             });
@@ -769,7 +749,7 @@ public class PubnubPlugin implements MethodCallHandler {
         for (String channel : channels) {
             client.signal().channel(channel).message(message).async(new PNCallback<PNPublishResult>() {
                 @Override
-                public void onResponse(PNPublishResult result, PNStatus status) {
+                public void onResponse(PNPublishResult result, @NotNull PNStatus status) {
                     handleStatus(clientId, status);
                 }
             });
@@ -801,46 +781,46 @@ public class PubnubPlugin implements MethodCallHandler {
         }
 
         @Override
-        public void status(PubNub pubnub, PNStatus status) {
+        public void status(@NotNull PubNub pubnub, PNStatus status) {
             System.out.println("CLIENT " + clientId + " IN STATUS:" + status.toString());
             statusStreamHandler.sendStatus(clientId, status);
         }
 
         @Override
-        public void message(PubNub pubnub, PNMessageResult message) {
+        public void message(@NotNull PubNub pubnub, @NotNull PNMessageResult message) {
             System.out.println("CLIENT " + clientId + " IN MESSAGE");
             messageStreamHandler.sendMessage(clientId, message);
         }
 
         @Override
-        public void presence(PubNub pubnub, PNPresenceEventResult presence) {
+        public void presence(@NotNull PubNub pubnub, @NotNull PNPresenceEventResult presence) {
             System.out.println("CLIENT " + clientId + " IN PRESENCE");
             presenceStreamHandler.sendPresence(clientId, presence);
         }
 
         @Override
-        public void signal(PubNub pubnub, PNSignalResult signal) {
+        public void signal(@NotNull PubNub pubnub, @NotNull PNSignalResult signal) {
             System.out.println("CLIENT " + clientId + " IN SIGNAL");
             messageStreamHandler.sendSignal(clientId, signal);
         }
 
         @Override
-        public void user(PubNub pubnub, PNUserResult pnUserResult) {
+        public void user(@NotNull PubNub pubnub, @NotNull PNUserResult pnUserResult) {
 
         }
 
         @Override
-        public void space(PubNub pubnub, PNSpaceResult pnSpaceResult) {
+        public void space(@NotNull PubNub pubnub, @NotNull PNSpaceResult pnSpaceResult) {
 
         }
 
         @Override
-        public void membership(PubNub pubnub, PNMembershipResult pnMembershipResult) {
+        public void membership(@NotNull PubNub pubnub, @NotNull PNMembershipResult pnMembershipResult) {
 
         }
 
         @Override
-        public void messageAction(PubNub pubnub, PNMessageActionResult pnMessageActionResult) {
+        public void messageAction(@NotNull PubNub pubnub, @NotNull PNMessageActionResult pnMessageActionResult) {
 
         }
     }
