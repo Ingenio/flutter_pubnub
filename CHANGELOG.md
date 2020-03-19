@@ -42,3 +42,7 @@
 ## [0.4.0]
 
 * Update PubNub dependency to latest Android SDK 4.32, solving network related issues
+
+## [0.4.1]
+
+* Fixed typo on Android version: 4.31
