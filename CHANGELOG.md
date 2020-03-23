@@ -46,3 +46,7 @@
 ## [0.4.1]
 
 * Fixed typo on Android version: 4.31
+
+## [0.4.2]
+
+* Changed minimum version for iOS to 8.0
