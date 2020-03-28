@@ -50,3 +50,7 @@
 ## [0.4.2]
 
 * Changed minimum version for iOS to 8.0
+
+## [0.5.0]
+
+* Updated to iOS PubNub 4.13.1
