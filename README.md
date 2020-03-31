@@ -1,7 +1,7 @@
 # Flutter PubNub Plugin
 
-A cross platform plugin for implementing real time messaging applications using PubNub (https://www.pubnub.com/).
-This plugin is not provided nor supported by PubNub. It was implemented part of a real time messaging application developed by Ingenio (https://www.ingenio.com/).
+A cross platform plugin for implementing real time messaging applications using PubNub (https://www.pubnub.com).
+This plugin is not provided nor supported by PubNub. It was implemented part of a real time messaging application developed by Ingenio (https://www.ingenio.com).
 
 ## Features
 
