@@ -656,11 +656,9 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
             
             if (status.isError) {
               PNErrorStatus *errorStatus = (PNErrorStatus *)status;
-                 PNErrorData *errorData = errorStatus.errorData;
-                 
-                 NSString *dataString = [[NSString alloc] initWithData:errorData.data encoding:NSUTF8StringEncoding];
+              PNErrorData *errorData = errorStatus.errorData;
               
-                NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: dataString};
+              NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @"cannot deserialize 1", STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
                 [self.errorStreamHandler sendError:result];
             } else {
                 [self.statusStreamHandler sendStatus:status clientId:clientId];
@@ -691,9 +689,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     PNErrorStatus *errorStatus = (PNErrorStatus *)status;
     PNErrorData *errorData = errorStatus.errorData;
     
-    NSString *dataString = [[NSString alloc] initWithData:errorData.data encoding:NSUTF8StringEncoding];
-    
-    NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:errorStatus.operation], ERROR_KEY: dataString, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
+    NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:errorStatus.operation], ERROR_KEY: @"cannot deserialize 2", STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
         [self.errorStreamHandler sendError:result];
     } else {
         [self.statusStreamHandler sendStatus:status clientId:clientId];
