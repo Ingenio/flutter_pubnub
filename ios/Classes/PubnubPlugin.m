@@ -655,7 +655,12 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
           withCompletion:^(PNClientStateUpdateStatus *status) {
             
             if (status.isError) {
-                NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+              PNErrorStatus *errorStatus = (PNErrorStatus *)status;
+                 PNErrorData *errorData = errorStatus.errorData;
+                 
+                 NSString *dataString = [[NSString alloc] initWithData:errorData.data encoding:NSUTF8StringEncoding];
+              
+                NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: dataString};
                 [self.errorStreamHandler sendError:result];
             } else {
                 [self.statusStreamHandler sendStatus:status clientId:clientId];
