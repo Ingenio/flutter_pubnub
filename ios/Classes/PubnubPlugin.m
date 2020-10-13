@@ -158,7 +158,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     NSLog(@"FlutterPubnubPlugin createClient clientId: %@ method: %@", clientId, call.method);
     
     PNConfiguration *config = [self configFromCall:call];
-    
+
     PubNub *client = [PubNub clientWithConfiguration:config];
     
     NSString *filter = call.arguments[FILTER_KEY];
