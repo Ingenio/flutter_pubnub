@@ -27,6 +27,7 @@ import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
 import com.pubnub.api.models.consumer.pubsub.PNSignalResult;
 import com.pubnub.api.models.consumer.pubsub.message_actions.PNMessageActionResult;
+import com.pubnub.api.models.consumer.pubsub.files.PNFileEventResult;
 import com.pubnub.api.models.consumer.pubsub.objects.PNMembershipResult;
 import com.pubnub.api.models.consumer.pubsub.objects.PNSpaceResult;
 import com.pubnub.api.models.consumer.pubsub.objects.PNUserResult;
@@ -151,7 +152,7 @@ public class PubnubPlugin implements MethodCallHandler {
                 put(PNStatusCategory.PNTLSConnectionFailedCategory, 14);
                 put(PNStatusCategory.PNTLSUntrustedCertificateCategory, 15);
                 put(PNStatusCategory.PNRequestMessageCountExceededCategory, 16);
-                put(PNStatusCategory.PNReconnectionAttemptsExhausted, 0);
+                put(PNStatusCategory.PNReconnectionAttemptsExhaustedCategory, 0);
             }};
 
     private static final Map<PNOperationType, Integer> operationAsNumber =
@@ -819,6 +820,11 @@ public class PubnubPlugin implements MethodCallHandler {
 
         @Override
         public void messageAction(PubNub pubnub, PNMessageActionResult pnMessageActionResult) {
+
+        }
+
+        @Override
+        public void file(PubNub pubnub, PNFileEventResult pnFileEventResult) {
 
         }
     }
