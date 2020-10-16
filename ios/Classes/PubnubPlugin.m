@@ -58,6 +58,7 @@ NSString *const START_KEY = @"start";
 NSString *const END_KEY = @"end";
 NSString *const PUSH_TYPE_KEY = @"pushType";
 NSString *const PUSH_TOKEN_KEY = @"pushToken";
+NSString *const ERROR_INFO_KEY = @"information";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -157,7 +158,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     NSLog(@"FlutterPubnubPlugin createClient clientId: %@ method: %@", clientId, call.method);
     
     PNConfiguration *config = [self configFromCall:call];
-    
+
     PubNub *client = [PubNub clientWithConfiguration:config];
     
     NSString *filter = call.arguments[FILTER_KEY];
@@ -654,7 +655,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
           withCompletion:^(PNClientStateUpdateStatus *status) {
             
             if (status.isError) {
-                NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+              PNErrorStatus *errorStatus = (PNErrorStatus *)status;
+              PNErrorData *errorData = errorStatus.errorData;
+              
+              NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @"cannot deserialize 1", STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
                 [self.errorStreamHandler sendError:result];
             } else {
                 [self.statusStreamHandler sendStatus:status clientId:clientId];
@@ -681,10 +685,12 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 
 - (void)handleStatus:(PNStatus *)status clientId:(NSString *)clientId {
-    if (status.isError) {
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+  if (status.isError && [status isMemberOfClass:PNErrorStatus.class]) {
+    PNErrorStatus *errorStatus = (PNErrorStatus *)status;
+    PNErrorData *errorData = errorStatus.errorData;
+    
+    NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:errorStatus.operation], ERROR_KEY: @"cannot deserialize 2", STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
         [self.errorStreamHandler sendError:result];
-        
     } else {
         [self.statusStreamHandler sendStatus:status clientId:clientId];
     }
