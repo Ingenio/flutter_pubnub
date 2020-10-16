@@ -102,6 +102,9 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String ERROR_KEY = "error";
     private static final String EVENT_KEY = "event";
     private static final String OCCUPANCY_KEY = "occupancy";
+    private static final String ERROR_INFO_KEY = "information";
+    private static final String STATUS_CATEGORY_KEY = "category";
+    private static final String STATUS_OPERATION_KEY = "operation";
 
     private static final String CHANNEL_GROUP_KEY = "channelGroup";
     private static final String CHANNEL_GROUPS_KEY = "channelGroups";
@@ -762,9 +765,13 @@ public class PubnubPlugin implements MethodCallHandler {
 
         System.out.println("Client " + clientId + " status: " + status);
         if (status.isError()) {
+
             Map<String, Object> map = new HashMap<>();
             map.put(ERROR_OPERATION_KEY, operationAsNumber.get(status.getOperation()));
             map.put(ERROR_KEY, status.getErrorData().toString());
+            map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
+            map.put(ERROR_INFO_KEY, categoriesAsNumber.get(status.getErrorData().getInformation()));
+
             errorStreamHandler.sendError(clientId, map);
         } else {
             statusStreamHandler.sendStatus(clientId, status);
@@ -876,8 +883,7 @@ public class PubnubPlugin implements MethodCallHandler {
 
     public static class StatusStreamHandler extends BaseStreamHandler {
 
-        private static final String STATUS_CATEGORY_KEY = "category";
-        private static final String STATUS_OPERATION_KEY = "operation";
+
 
         void sendStatus(final String clientId, final PNStatus status) {
             if (super.sink != null) {
