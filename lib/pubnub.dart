@@ -58,6 +58,7 @@ class PubNub {
   static const _unsubscribeMethod = 'unsubscribe';
   static const _disposeMethod = 'dispose';
   static const _uuidMethod = 'uuid';
+  static const _reconnectMethod = 'reconnect';
   static const _addChannelsToChannelGroupMethod = 'addChannelsToChannelGroup';
   static const _listChannelsForChannelGroupMethod =
       'listChannelsForChannelGroup';
@@ -128,6 +129,11 @@ class PubNub {
   /// Subscribe to a list of channels
   Future<void> subscribe(List<String> channels) async {
     return await _invokeMethod(_subscribeMethod, {_channelsKey: channels});
+  }
+
+  /// Reconnect client
+  Future<void> reconnect() async {
+    return await _invokeMethod(_reconnectMethod);
   }
 
   /// Set Presence State on a specified channel
