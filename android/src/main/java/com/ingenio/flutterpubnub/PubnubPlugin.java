@@ -67,6 +67,8 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String UNSUBSCRIBE_METHOD = "unsubscribe";
     private static final String DISPOSE_METHOD = "dispose";
     private static final String UUID_METHOD = "uuid";
+    private static final String RECONNECT_METHOD = "reconnect";
+
 
     private static final String ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = "addChannelsToChannelGroup";
     private static final String LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = "listChannelsForChannelGroup";
@@ -292,6 +294,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 break;
             case SIGNAL_METHOD:
                 handleSignal(clientId, call, result);
+                break;
+            case RECONNECT_METHOD:
+                handleReconnect(clientId, call, result);
                 break;
             default:
                 result.notImplemented();
@@ -663,6 +668,12 @@ public class PubnubPlugin implements MethodCallHandler {
         }
         System.out.println("SUBSCRIBE CLIENT: " + clientId);
         client.subscribe().channels(channels).withPresence().execute();
+        result.success(true);
+    }
+
+    private void handleReconnect(final String clientId, MethodCall call, Result result) {
+        PubNub client = getClient(clientId, call);
+        client.reconnect();
         result.success(true);
     }
 

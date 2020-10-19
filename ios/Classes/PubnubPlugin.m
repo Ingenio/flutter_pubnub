@@ -19,6 +19,7 @@ NSString *const PRESENCE_METHOD = @"presence";
 NSString *const UNSUBSCRIBE_METHOD = @"unsubscribe";
 NSString *const DISPOSE_METHOD = @"dispose";
 NSString *const UUID_METHOD = @"uuid";
+NSString *const RECONNECT_METHOD = @"reconnect";
 
 NSString *const ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = @"addChannelsToChannelGroup";
 NSString *const LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = @"listChannelsForChannelGroup";
@@ -130,6 +131,8 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
             [self handleRemoveAllPushNotificationsFromDeviceWithPushToken:call clientId:clientId result:result];
         } else if  ([SIGNAL_METHOD isEqualToString:call.method]) {
             [self handleSignal:call clientId:clientId result:result];
+        } else if ([RECONNECT_METHOD isEqualToString:call.method]) {
+            [self handleReconnect:call clientId:clientId result:result];
         }
         
         else {
@@ -683,6 +686,12 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     result(NULL);
 }
+
+- (void) handleReconnect:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSLog(@"Reconnect: %@", channels);
+    [self handleSubscribe:call clientId:clientId result:result];
+}
+
 
 - (void)handleStatus:(PNStatus *)status clientId:(NSString *)clientId {
   if (status.isError && [status isMemberOfClass:PNErrorStatus.class]) {
