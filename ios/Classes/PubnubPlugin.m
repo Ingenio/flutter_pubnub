@@ -688,7 +688,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 
 - (void) handleReconnect:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
-    NSLog(@"Reconnect: %@", channels);
+    NSLog(@"Reconnect client: %@", clientId);
     [self handleSubscribe:call clientId:clientId result:result];
 }
 
