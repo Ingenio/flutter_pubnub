@@ -60,6 +60,7 @@ NSString *const END_KEY = @"end";
 NSString *const PUSH_TYPE_KEY = @"pushType";
 NSString *const PUSH_TOKEN_KEY = @"pushToken";
 NSString *const ERROR_INFO_KEY = @"information";
+NSString *const RESTORE = @"restore";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -196,6 +197,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     id presenceTimeout = call.arguments[PRESENCE_TIMEOUT_KEY];
     id uuid = call.arguments[UUID_KEY];
     
+    id restore = call.arguments[RESTORE];
     
     config =
     [PNConfiguration configurationWithPublishKey:publishKey
@@ -205,6 +207,11 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     if(uuid != [NSNull null]) {
         NSLog(@"configFromCall: setting uuid");
         config.uuid = uuid;
+    }
+  
+    if(restore != [NSNull null]) {
+       NSLog(@"configFromCall: setting uuid");
+       config.catchUpOnSubscriptionRestore = [restore boolValue];
     }
     
     if(authKey != [NSNull null]) {
