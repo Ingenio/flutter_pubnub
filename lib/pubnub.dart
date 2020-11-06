@@ -13,16 +13,22 @@ class PubNubConfig {
   static final _presenceTimeoutKey = 'presenceTimeout';
   static final _uuidKey = 'uuid';
   static final _filterKey = 'filter';
+  static final _restore = 'restore';
   static final _uuid = Uuid();
 
   PubNubConfig(this.publishKey, this.subscribeKey,
-      {this.authKey, this.presenceTimeout, this.uuid, this.filter});
+      {this.authKey,
+      this.presenceTimeout,
+      this.uuid,
+      this.filter,
+      this.restore = false});
 
   final String publishKey;
   final String subscribeKey;
   final String authKey;
   final int presenceTimeout;
   final String uuid;
+  final bool restore;
   final String filter;
 
   Map<String, dynamic> toMap() {
@@ -33,6 +39,7 @@ class PubNubConfig {
       _uuidKey: uuid,
       _filterKey: filter,
       _authKey: authKey,
+      _restore: restore,
     };
 
     if (presenceTimeout != null) {
