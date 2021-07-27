@@ -151,7 +151,7 @@ class PubNub {
   }
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
-  Future<void> publish(List<String> channels, Map message,
+  Future<bool> publish(List<String> channels, Map message,
       {Map metadata}) async {
     Map args = {_messageKey: message, _channelsKey: channels};
 
