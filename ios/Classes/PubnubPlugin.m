@@ -612,12 +612,16 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     for(NSString *channel in channels) {
         [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
-            __strong __typeof(self) strongSelf = weakSelf;
-            [strongSelf handleStatus:status clientId:clientId];
+              if (status.isError) {
+                 result(false);
+                  [self.errorStreamHandler sendError:result];
+
+              } else {
+              result(true);
+                  [self.statusStreamHandler sendStatus:status clientId:clientId];
+              }
         }];
     }
-    
-    result(NULL);
 }
 
 - (void) handleSignal:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
