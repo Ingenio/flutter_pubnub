@@ -593,7 +593,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     result([[client currentConfiguration] uuid]);
 }
 
-- (void) handlePublish:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(@(YES))result {
+- (void) handlePublish:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary *message = call.arguments[MESSAGE_KEY];
     NSDictionary *metadata = call.arguments[METADATA_KEY];
