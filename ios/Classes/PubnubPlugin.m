@@ -612,14 +612,12 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     for(NSString *channel in channels) {
         [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
-              if (status.isError) {
-                 result(false);
-                  [self.errorStreamHandler sendError:result];
-
-              } else {
-              result(true);
-                  [self.statusStreamHandler sendStatus:status clientId:clientId];
-              }
+            if (status.isError) {
+                result(false);
+            } else {
+                result(true);
+            }
+            [self.statusStreamHandler sendStatus:status clientId:clientId];
         }];
     }
 }
