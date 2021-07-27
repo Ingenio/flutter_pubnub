@@ -722,7 +722,7 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
-    private void handlePublish(final String clientId, MethodCall call, Result result) {
+    private void handlePublish(final String clientId, MethodCall call, final Result result) {
         List<String> channels = call.argument(CHANNELS_KEY);
         if (channels == null || channels.isEmpty()) {
             throw new IllegalArgumentException("Publish channels can't be null or empty");
