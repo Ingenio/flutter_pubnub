@@ -737,7 +737,7 @@ public class PubnubPlugin implements MethodCallHandler {
         for (String channel : channels) {
             client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
                 @Override
-                public void onResponse(PNPublishResult result, PNStatus status) {
+                public void onResponse(PNPublishResult publishResult, PNStatus status) {
                     System.out.println("Client " + clientId + " status: " + status);
                     if (status.isError()) {
                         result.success(false);
