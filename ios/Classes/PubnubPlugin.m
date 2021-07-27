@@ -593,7 +593,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     result([[client currentConfiguration] uuid]);
 }
 
-- (void) handlePublish:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(BOOL)result {
+- (void) handlePublish:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(@(YES))result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary *message = call.arguments[MESSAGE_KEY];
     NSDictionary *metadata = call.arguments[METADATA_KEY];
@@ -613,9 +613,9 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     for(NSString *channel in channels) {
         [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
             if (status.isError) {
-                result(false);
+                result(@(NO));
             } else {
-                result(true);
+                result(@(YES));
             }
             [self.statusStreamHandler sendStatus:status clientId:clientId];
         }];
