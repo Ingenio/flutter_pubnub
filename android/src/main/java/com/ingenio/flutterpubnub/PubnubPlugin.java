@@ -748,9 +748,6 @@ public class PubnubPlugin implements MethodCallHandler {
                 }
             });
         }
-
-
-        result.success(true);
     }
 
     private void handleSignal(final String clientId, MethodCall call, Result result) {
