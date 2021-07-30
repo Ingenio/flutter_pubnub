@@ -742,10 +742,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     if (status.isError()) {
 
                         Map<String, Object> map = new HashMap<>();
-                        map.put(ERROR_OPERATION_KEY, operationAsNumber.get(status.getOperation()));
-                        map.put(ERROR_KEY, status.getErrorData().toString());
-                        map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
-                        map.put(ERROR_INFO_KEY, categoriesAsNumber.get(status.getErrorData().getInformation()));
+                        map.put("isError", false);
                         result.success(map);
                         errorStreamHandler.sendError(clientId, map);
                     } else {
