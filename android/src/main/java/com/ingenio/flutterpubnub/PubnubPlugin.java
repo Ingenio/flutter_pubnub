@@ -740,9 +740,17 @@ public class PubnubPlugin implements MethodCallHandler {
                 public void onResponse(PNPublishResult publishResult, PNStatus status) {
                     System.out.println("Client " + clientId + " status: " + status);
                     if (status.isError()) {
-                        result.success(false);
+
+                        Map<String, Object> map = new HashMap<>();
+                        map.put(ERROR_OPERATION_KEY, operationAsNumber.get(status.getOperation()));
+                        map.put(ERROR_KEY, status.getErrorData().toString());
+                        map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
+                        map.put(ERROR_INFO_KEY, categoriesAsNumber.get(status.getErrorData().getInformation()));
+                        result.success(map);
+                        errorStreamHandler.sendError(clientId, map);
                     } else {
-                        result.success(true);
+                        statusStreamHandler.sendStatus(clientId, status);
+                        result.success(status);
                     }
                     statusStreamHandler.sendStatus(clientId, status);
                 }
