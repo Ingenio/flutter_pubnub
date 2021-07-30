@@ -744,8 +744,8 @@ public class PubnubPlugin implements MethodCallHandler {
                         Map<String, Object> map = new HashMap<>();
                         map.put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
                         map.put(ERROR_KEY, status.getErrorData().toString());
-                        map.put(ERROR_OPERATION_KEY, status.getOperation());
-                        map.put(STATUS_CATEGORY_KEY, status.getCategory());
+                        map.put(ERROR_OPERATION_KEY, operationAsNumber.get(status.getOperation()));
+                        map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
                         result.success(map);
                         errorStreamHandler.sendError(clientId, map);
                     } else {
