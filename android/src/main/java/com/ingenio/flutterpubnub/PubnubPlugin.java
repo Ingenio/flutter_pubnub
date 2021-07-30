@@ -107,7 +107,8 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String ERROR_INFO_KEY = "information";
     private static final String STATUS_CATEGORY_KEY = "category";
     private static final String STATUS_OPERATION_KEY = "operation";
-    private static final String MESSAGE_PUBLISHING_STATUS = "isPublished";
+    private static final String MESSAGE_PUBLISHING_STATUS_KEY = "isPublished";
+    private static final String ERROR_MESSAGE_KEY = "errorInfo";
 
     private static final String CHANNEL_GROUP_KEY = "channelGroup";
     private static final String CHANNEL_GROUPS_KEY = "channelGroups";
@@ -742,17 +743,16 @@ public class PubnubPlugin implements MethodCallHandler {
                     System.out.println("Client " + clientId + " status: " + status);
                     if (status.isError()) {
                         Map<String, Object> map = new HashMap<>();
-                        map.put(MESSAGE_PUBLISHING_STATUS, false);
+                        map.put(MESSAGE_PUBLISHING_STATUS_KEY, status.isError());
                         map.put(ERROR_OPERATION_KEY, operationAsNumber.get(status.getOperation()));
                         map.put(ERROR_KEY, status.getErrorData().toString());
-                        map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
-                        map.put(ERROR_INFO_KEY, categoriesAsNumber.get(status.getErrorData().getInformation()));
+                        map.put(ERROR_MESSAGE_KEY, status.getErrorData().getThrowable().getMessage());
                         result.success(map);
                         errorStreamHandler.sendError(clientId, map);
                     } else {
                         statusStreamHandler.sendStatus(clientId, status);
                         Map<String, Object> map = new HashMap<>();
-                        map.put(MESSAGE_PUBLISHING_STATUS, true);
+                        map.put(MESSAGE_PUBLISHING_STATUS_KEY, status.isError());
                         result.success(map);
                     }
                     statusStreamHandler.sendStatus(clientId, status);
