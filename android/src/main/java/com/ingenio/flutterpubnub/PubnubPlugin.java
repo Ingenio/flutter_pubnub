@@ -195,6 +195,7 @@ public class PubnubPlugin implements MethodCallHandler {
     private StatusStreamHandler statusStreamHandler;
     private ErrorStreamHandler errorStreamHandler;
     private PresenceStreamHandler presenceStreamHandler;
+    private PNStatus pnStatus;
 
     private PubnubPlugin() {
         System.out.println("PubnubFlutterPlugin constructor");
@@ -738,25 +739,22 @@ public class PubnubPlugin implements MethodCallHandler {
         for (String channel : channels) {
             client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
                 @Override
-                public void onResponse(PNPublishResult publishResult, PNStatus status) {
-                    System.out.println("Client " + clientId + " status: " + status);
-                    if (status.isError()) {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
-                        map.put(ERROR_KEY, status.getErrorData().toString());
-                        map.put(ERROR_OPERATION_KEY, operationAsNumber.get(status.getOperation()));
-                        map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
-                        result.success(map);
-                        errorStreamHandler.sendError(clientId, map);
-                    } else {
-                        statusStreamHandler.sendStatus(clientId, status);
-                        Map<String, Object> map = new HashMap<>();
-                        map.put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
-                        result.success(map);
-                    }
-                    statusStreamHandler.sendStatus(clientId, status);
+                public void onResponse(PNPublishResult result, PNStatus status) {
+                    pnStatus = status;
+                    handleStatus(clientId, status);
                 }
             });
+        }
+        if(pnStatus != null) {
+            Map<String, Object> map = new HashMap<>();
+            map.put(MESSAGE_PUBLISHING_STATUS_KEY, !pnStatus.isError());
+            map.put(ERROR_KEY, pnStatus.getErrorData().toString());
+            map.put(ERROR_OPERATION_KEY, pnStatus.getOperation().toString());
+            map.put(STATUS_CATEGORY_KEY, pnStatus.getCategory().toString());
+            result.success(map);
+        }
+        else {
+            result.success(false);
         }
     }
 
