@@ -107,6 +107,10 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String ERROR_INFO_KEY = "information";
     private static final String STATUS_CATEGORY_KEY = "category";
     private static final String STATUS_OPERATION_KEY = "operation";
+    private static final String MESSAGE_PUBLISHING_STATUS_KEY = "isPublished";
+    private static final String MESSAGE_PUBLISHING_UUID_KEY = "uuid";
+    private static final String MESSAGE_PUBLISHING_STATUS_CODE_KEY = "statusCode";
+    private static final String MESSAGE_PUBLISHING_CHANNELS_KEY = "affectedChannels";
 
     private static final String CHANNEL_GROUP_KEY = "channelGroup";
     private static final String CHANNEL_GROUPS_KEY = "channelGroups";
@@ -464,9 +468,9 @@ public class PubnubPlugin implements MethodCallHandler {
 
                         List<String> items = new ArrayList<>();
 
-                        if(res != null) {
+                        if (res != null) {
                             for (PNHistoryItemResult item : res.getMessages()) {
-                                String message = "{\"message\": " +  item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
+                                String message = "{\"message\": " + item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
 
                                 items.add(message); // returns something like:
                             }
@@ -722,7 +726,7 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
-    private void handlePublish(final String clientId, MethodCall call, Result result) {
+    private void handlePublish(final String clientId, MethodCall call, final Result result) {
         List<String> channels = call.argument(CHANNELS_KEY);
         if (channels == null || channels.isEmpty()) {
             throw new IllegalArgumentException("Publish channels can't be null or empty");
@@ -737,14 +741,24 @@ public class PubnubPlugin implements MethodCallHandler {
         for (String channel : channels) {
             client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
                 @Override
-                public void onResponse(PNPublishResult result, PNStatus status) {
+                public void onResponse(PNPublishResult pnResult, PNStatus status) {
+                    if (status != null) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
+                        map.put(ERROR_OPERATION_KEY,  operationAsNumber.get(status.getOperation()));
+                        map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
+                        map.put(MESSAGE_PUBLISHING_UUID_KEY, status.getUuid());
+                        map.put(MESSAGE_PUBLISHING_STATUS_CODE_KEY, status.getStatusCode());
+                        map.put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
+                        map.put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
+                        result.success(map);
+                    } else {
+                        result.success(false);
+                    }
                     handleStatus(clientId, status);
                 }
             });
         }
-
-
-        result.success(true);
     }
 
     private void handleSignal(final String clientId, MethodCall call, Result result) {
@@ -879,7 +893,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     put(CLIENT_ID_KEY, clientId);
                     put(UUID_KEY, publisher);
                     put(CHANNEL_KEY, channel);
-                    put(MESSAGE_KEY,message);
+                    put(MESSAGE_KEY, message);
                 }};
                 executor.execute(new Runnable() {
                     @Override
@@ -893,7 +907,6 @@ public class PubnubPlugin implements MethodCallHandler {
     }
 
     public static class StatusStreamHandler extends BaseStreamHandler {
-
 
 
         void sendStatus(final String clientId, final PNStatus status) {
