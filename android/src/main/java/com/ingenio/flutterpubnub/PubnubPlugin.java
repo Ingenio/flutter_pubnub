@@ -108,6 +108,9 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String STATUS_CATEGORY_KEY = "category";
     private static final String STATUS_OPERATION_KEY = "operation";
     private static final String MESSAGE_PUBLISHING_STATUS_KEY = "isPublished";
+    private static final String MESSAGE_PUBLISHING_UUID_KEY = "uuid";
+    private static final String MESSAGE_PUBLISHING_STATUS_CODE_KEY = "statusCode";
+    private static final String MESSAGE_PUBLISHING_CHANNELS_KEY = "affectedChannels";
 
     private static final String CHANNEL_GROUP_KEY = "channelGroup";
     private static final String CHANNEL_GROUPS_KEY = "channelGroups";
@@ -748,11 +751,12 @@ public class PubnubPlugin implements MethodCallHandler {
         if (pnStatus != null) {
             Map<String, Object> map = new HashMap<>();
             map.put(MESSAGE_PUBLISHING_STATUS_KEY, !pnStatus.isError());
-            if (pnStatus.isError()) {
-                map.put(ERROR_KEY, pnStatus.getErrorData().toString());
-                map.put(ERROR_OPERATION_KEY, pnStatus.getOperation().toString());
-                map.put(STATUS_CATEGORY_KEY, pnStatus.getCategory().toString());
-            }
+            map.put(ERROR_OPERATION_KEY,  operationAsNumber.get(pnStatus.getOperation()));
+            map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(pnStatus.getCategory()));
+            map.put(MESSAGE_PUBLISHING_UUID_KEY, pnStatus.getUuid());
+            map.put(MESSAGE_PUBLISHING_STATUS_CODE_KEY, pnStatus.getStatusCode());
+            map.put(MESSAGE_PUBLISHING_CHANNELS_KEY, pnStatus.getAffectedChannels());
+            map.put(ERROR_KEY, pnStatus.isError() ? pnStatus.getErrorData().toString() : "");
             result.success(map);
         } else {
             result.success(false);
