@@ -466,9 +466,9 @@ public class PubnubPlugin implements MethodCallHandler {
 
                         List<String> items = new ArrayList<>();
 
-                        if(res != null) {
+                        if (res != null) {
                             for (PNHistoryItemResult item : res.getMessages()) {
-                                String message = "{\"message\": " +  item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
+                                String message = "{\"message\": " + item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
 
                                 items.add(message); // returns something like:
                             }
@@ -745,15 +745,16 @@ public class PubnubPlugin implements MethodCallHandler {
                 }
             });
         }
-        if(pnStatus != null) {
+        if (pnStatus != null) {
             Map<String, Object> map = new HashMap<>();
             map.put(MESSAGE_PUBLISHING_STATUS_KEY, !pnStatus.isError());
-            map.put(ERROR_KEY, pnStatus.getErrorData().toString());
-            map.put(ERROR_OPERATION_KEY, pnStatus.getOperation().toString());
-            map.put(STATUS_CATEGORY_KEY, pnStatus.getCategory().toString());
+            if (pnStatus.isError()) {
+                map.put(ERROR_KEY, pnStatus.getErrorData().toString());
+                map.put(ERROR_OPERATION_KEY, pnStatus.getOperation().toString());
+                map.put(STATUS_CATEGORY_KEY, pnStatus.getCategory().toString());
+            }
             result.success(map);
-        }
-        else {
+        } else {
             result.success(false);
         }
     }
@@ -890,7 +891,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     put(CLIENT_ID_KEY, clientId);
                     put(UUID_KEY, publisher);
                     put(CHANNEL_KEY, channel);
-                    put(MESSAGE_KEY,message);
+                    put(MESSAGE_KEY, message);
                 }};
                 executor.execute(new Runnable() {
                     @Override
@@ -904,7 +905,6 @@ public class PubnubPlugin implements MethodCallHandler {
     }
 
     public static class StatusStreamHandler extends BaseStreamHandler {
-
 
 
         void sendStatus(final String clientId, final PNStatus status) {
