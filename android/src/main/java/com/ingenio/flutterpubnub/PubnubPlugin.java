@@ -198,7 +198,6 @@ public class PubnubPlugin implements MethodCallHandler {
     private StatusStreamHandler statusStreamHandler;
     private ErrorStreamHandler errorStreamHandler;
     private PresenceStreamHandler presenceStreamHandler;
-    private PNStatus pnStatus;
 
     private PubnubPlugin() {
         System.out.println("PubnubFlutterPlugin constructor");
@@ -742,24 +741,23 @@ public class PubnubPlugin implements MethodCallHandler {
         for (String channel : channels) {
             client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
                 @Override
-                public void onResponse(PNPublishResult result, PNStatus status) {
-                    pnStatus = status;
+                public void onResponse(PNPublishResult pnResult, PNStatus status) {
+                    if (status != null) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
+                        map.put(ERROR_OPERATION_KEY,  operationAsNumber.get(status.getOperation()));
+                        map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
+                        map.put(MESSAGE_PUBLISHING_UUID_KEY, status.getUuid());
+                        map.put(MESSAGE_PUBLISHING_STATUS_CODE_KEY, status.getStatusCode());
+                        map.put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
+                        map.put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
+                        result.success(map);
+                    } else {
+                        result.success(false);
+                    }
                     handleStatus(clientId, status);
                 }
             });
-        }
-        if (pnStatus != null) {
-            Map<String, Object> map = new HashMap<>();
-            map.put(MESSAGE_PUBLISHING_STATUS_KEY, !pnStatus.isError());
-            map.put(ERROR_OPERATION_KEY,  operationAsNumber.get(pnStatus.getOperation()));
-            map.put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(pnStatus.getCategory()));
-            map.put(MESSAGE_PUBLISHING_UUID_KEY, pnStatus.getUuid());
-            map.put(MESSAGE_PUBLISHING_STATUS_CODE_KEY, pnStatus.getStatusCode());
-            map.put(MESSAGE_PUBLISHING_CHANNELS_KEY, pnStatus.getAffectedChannels());
-            map.put(ERROR_KEY, pnStatus.isError() ? pnStatus.getErrorData().toString() : "");
-            result.success(map);
-        } else {
-            result.success(false);
         }
     }
 
