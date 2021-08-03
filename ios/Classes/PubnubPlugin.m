@@ -61,6 +61,10 @@ NSString *const PUSH_TYPE_KEY = @"pushType";
 NSString *const PUSH_TOKEN_KEY = @"pushToken";
 NSString *const ERROR_INFO_KEY = @"information";
 NSString *const RESTORE = @"restore";
+NSString *const MESSAGE_PUBLISHING_STATUS_KEY = @"isPublished";
+NSString *const MESSAGE_PUBLISHING_UUID_KEY = @"uuid";
+NSString *const MESSAGE_PUBLISHING_STATUS_CODE_KEY = @"statusCode";
+NSString *const MESSAGE_PUBLISHING_CHANNELS_KEY = @"affectedChannels";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -612,12 +616,15 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     for(NSString *channel in channels) {
         [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
-            if (status.isError) {
-                result(@(NO));
-            } else {
-                result(@(YES));
-            }
-            [self.statusStreamHandler sendStatus:status clientId:clientId];
+            __strong __typeof(self) strongSelf = weakSelf;
+                NSDictionary *resultData = @{MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
+                                             ERROR_OPERATION_KEY:[PubnubPlugin getOperationAsNumber:status.operation],
+                                             STATUS_CATEGORY_KEY:[PubnubPlugin getOperationAsNumber:status.category],
+                                             MESSAGE_PUBLISHING_UUID_KEY: status.uuid,
+                                             MESSAGE_PUBLISHING_STATUS_CODE_KEY: @(status.statusCode),
+                                             ERROR_KEY:status.isError ? status.errorData.information :@"" };
+                result(resultData);
+            [strongSelf handleStatus:status clientId:clientId];
         }];
     }
 }
