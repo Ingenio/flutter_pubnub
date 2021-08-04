@@ -742,7 +742,6 @@ public class PubnubPlugin implements MethodCallHandler {
             client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
                 @Override
                 public void onResponse(PNPublishResult pnResult, PNStatus status) {
-                    if (status != null) {
                         Map<String, Object> map = new HashMap<>();
                         map.put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
                         map.put(ERROR_OPERATION_KEY,  operationAsNumber.get(status.getOperation()));
@@ -752,9 +751,6 @@ public class PubnubPlugin implements MethodCallHandler {
                         map.put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
                         map.put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
                         result.success(map);
-                    } else {
-                        result.success(false);
-                    }
                     handleStatus(clientId, status);
                 }
             });
