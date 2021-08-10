@@ -22,15 +22,15 @@ import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsDeleteGroupRe
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsRemoveChannelResult;
 import com.pubnub.api.models.consumer.history.PNHistoryItemResult;
 import com.pubnub.api.models.consumer.history.PNHistoryResult;
+import com.pubnub.api.models.consumer.objects_api.channel.PNChannelMetadataResult;
+import com.pubnub.api.models.consumer.objects_api.membership.PNMembershipResult;
+import com.pubnub.api.models.consumer.objects_api.uuid.PNUUIDMetadataResult;
 import com.pubnub.api.models.consumer.presence.PNSetStateResult;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
 import com.pubnub.api.models.consumer.pubsub.PNSignalResult;
 import com.pubnub.api.models.consumer.pubsub.message_actions.PNMessageActionResult;
 import com.pubnub.api.models.consumer.pubsub.files.PNFileEventResult;
-import com.pubnub.api.models.consumer.pubsub.objects.PNMembershipResult;
-import com.pubnub.api.models.consumer.pubsub.objects.PNSpaceResult;
-import com.pubnub.api.models.consumer.pubsub.objects.PNUserResult;
 import com.pubnub.api.models.consumer.push.PNPushAddChannelResult;
 import com.pubnub.api.models.consumer.push.PNPushListProvisionsResult;
 import com.pubnub.api.models.consumer.push.PNPushRemoveAllChannelsResult;
@@ -832,12 +832,12 @@ public class PubnubPlugin implements MethodCallHandler {
         }
 
         @Override
-        public void user(PubNub pubnub, PNUserResult pnUserResult) {
+        public void uuid(PubNub pubnub, PNUUIDMetadataResult pnUUIDMetadataResult) {
 
         }
 
         @Override
-        public void space(PubNub pubnub, PNSpaceResult pnSpaceResult) {
+        public void channel(PubNub pubnub, PNChannelMetadataResult pnChannelMetadataResult) {
 
         }
 
