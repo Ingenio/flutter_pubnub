@@ -214,7 +214,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     }
   
     if(restore != [NSNull null]) {
-       NSLog(@"configFromCall: setting uuid");
+        NSLog(@"configFromCall: setting restore: %d", [restore boolValue]);
        config.catchUpOnSubscriptionRestore = [restore boolValue];
     }
     
