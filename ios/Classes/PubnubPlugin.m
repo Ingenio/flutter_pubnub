@@ -62,9 +62,9 @@ NSString *const PUSH_TOKEN_KEY = @"pushToken";
 NSString *const ERROR_INFO_KEY = @"information";
 NSString *const RESTORE = @"restore";
 NSString *const MESSAGE_PUBLISHING_STATUS_KEY = @"isPublished";
-NSString *const STATUS_CODE_KEY = @"statusCode";
+NSString *const MESSAGE_PUBLISHING_UUID_KEY = @"uuid";
+NSString *const MESSAGE_PUBLISHING_STATUS_CODE_KEY = @"statusCode";
 NSString *const MESSAGE_PUBLISHING_CHANNELS_KEY = @"affectedChannels";
-NSString *const REQUEST_KEY = @"request";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -212,8 +212,6 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
         NSLog(@"configFromCall: setting uuid");
         config.uuid = uuid;
     }
-    
-
   
     if(restore != [NSNull null]) {
         NSLog(@"configFromCall: setting restore: %d", [restore boolValue]);
@@ -622,10 +620,8 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
                 NSDictionary *resultData = @{MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
                                              ERROR_OPERATION_KEY:[PubnubPlugin getOperationAsNumber:status.operation],
                                              STATUS_CATEGORY_KEY:[PubnubPlugin getOperationAsNumber:status.category],
-                                             UUID_KEY: status.uuid,
-                                             STATUS_CODE_KEY: @(status.statusCode),
-                                             MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
-                                             REQUEST_KEY: status.clientRequest.URL.absoluteString,
+                                             MESSAGE_PUBLISHING_UUID_KEY: status.uuid,
+                                             MESSAGE_PUBLISHING_STATUS_CODE_KEY: @(status.statusCode),
                                              ERROR_KEY:status.isError ? status.errorData.information :@"" };
                 result(resultData);
             [strongSelf handleStatus:status clientId:clientId];
@@ -718,7 +714,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     PNErrorStatus *errorStatus = (PNErrorStatus *)status;
     PNErrorData *errorData = errorStatus.errorData;
     
-      NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:errorStatus.operation], STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], UUID_KEY: status.uuid, STATUS_CODE_KEY: @(status.statusCode), REQUEST_KEY: status.clientRequest.URL.absoluteString, ERROR_KEY: @"cannot deserialize 2", ERROR_INFO_KEY: errorData.information};
+    NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:errorStatus.operation], ERROR_KEY: @"cannot deserialize 2", STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
         [self.errorStreamHandler sendError:result];
     } else {
         [self.statusStreamHandler sendStatus:status clientId:clientId];
@@ -931,7 +927,7 @@ typedef enum {
             affectedChannels = subscribeStatus.subscribedChannels;
         }
         
-        self.eventSink(@{CLIENT_ID_KEY: clientId, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:status.category],STATUS_OPERATION_KEY: [PubnubPlugin getOperationAsNumber:status.operation], UUID_KEY: status.uuid, CHANNELS_KEY: affectedChannels == NULL ? @[] : affectedChannels, STATUS_CODE_KEY: @(status.statusCode), REQUEST_KEY: status.clientRequest.URL.absoluteString });
+        self.eventSink(@{CLIENT_ID_KEY: clientId, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:status.category],STATUS_OPERATION_KEY: [PubnubPlugin getOperationAsNumber:status.operation], UUID_KEY: status.uuid, CHANNELS_KEY: affectedChannels == NULL ? @[] : affectedChannels});
     }
 }
 
