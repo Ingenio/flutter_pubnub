@@ -751,7 +751,7 @@ public class PubnubPlugin implements MethodCallHandler {
                         put(UUID_KEY, status.getUuid());
                         put(STATUS_CODE, status.getStatusCode());
                         put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
-                        put(REQUEST_KEY, status.getClientRequest());
+                        put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
                         put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
                     }};
                         result.success(map);
@@ -799,7 +799,7 @@ public class PubnubPlugin implements MethodCallHandler {
                         operationType == null ? null : operationAsNumber.get(operationType));
                 put(UUID_KEY, status.getUuid());
                 put(STATUS_CODE, status.getStatusCode());
-                put(REQUEST_KEY, status.getClientRequest().toString());
+                put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
                 put(ERROR_KEY, status.getErrorData().toString());
                 put(ERROR_INFO_KEY, categoriesAsNumber.get(status.getErrorData().getInformation()));
             }};
@@ -927,7 +927,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     put(UUID_KEY, status.getUuid());
                     put(CHANNELS_KEY, status.getAffectedChannels());
                     put(STATUS_CODE, status.getStatusCode());
-                    put(REQUEST_KEY, status.getClientRequest().toString());
+                    put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
                 }};
                 executor.execute(new Runnable() {
                     @Override
