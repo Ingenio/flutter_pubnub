@@ -22,14 +22,15 @@ import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsDeleteGroupRe
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsRemoveChannelResult;
 import com.pubnub.api.models.consumer.history.PNHistoryItemResult;
 import com.pubnub.api.models.consumer.history.PNHistoryResult;
+import com.pubnub.api.models.consumer.objects_api.channel.PNChannelMetadataResult;
+import com.pubnub.api.models.consumer.objects_api.membership.PNMembershipResult;
+import com.pubnub.api.models.consumer.objects_api.uuid.PNUUIDMetadataResult;
 import com.pubnub.api.models.consumer.presence.PNSetStateResult;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
 import com.pubnub.api.models.consumer.pubsub.PNSignalResult;
 import com.pubnub.api.models.consumer.pubsub.message_actions.PNMessageActionResult;
-import com.pubnub.api.models.consumer.pubsub.objects.PNMembershipResult;
-import com.pubnub.api.models.consumer.pubsub.objects.PNSpaceResult;
-import com.pubnub.api.models.consumer.pubsub.objects.PNUserResult;
+import com.pubnub.api.models.consumer.pubsub.files.PNFileEventResult;
 import com.pubnub.api.models.consumer.push.PNPushAddChannelResult;
 import com.pubnub.api.models.consumer.push.PNPushListProvisionsResult;
 import com.pubnub.api.models.consumer.push.PNPushRemoveAllChannelsResult;
@@ -66,6 +67,8 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String UNSUBSCRIBE_METHOD = "unsubscribe";
     private static final String DISPOSE_METHOD = "dispose";
     private static final String UUID_METHOD = "uuid";
+    private static final String RECONNECT_METHOD = "reconnect";
+
 
     private static final String ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = "addChannelsToChannelGroup";
     private static final String LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = "listChannelsForChannelGroup";
@@ -101,6 +104,13 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String ERROR_KEY = "error";
     private static final String EVENT_KEY = "event";
     private static final String OCCUPANCY_KEY = "occupancy";
+    private static final String ERROR_INFO_KEY = "information";
+    private static final String STATUS_CATEGORY_KEY = "category";
+    private static final String STATUS_OPERATION_KEY = "operation";
+    private static final String MESSAGE_PUBLISHING_STATUS_KEY = "isPublished";
+    private static final String STATUS_CODE = "statusCode";
+    private static final String MESSAGE_PUBLISHING_CHANNELS_KEY = "affectedChannels";
+    private static final String REQUEST_KEY = "request";
 
     private static final String CHANNEL_GROUP_KEY = "channelGroup";
     private static final String CHANNEL_GROUPS_KEY = "channelGroups";
@@ -151,7 +161,7 @@ public class PubnubPlugin implements MethodCallHandler {
                 put(PNStatusCategory.PNTLSConnectionFailedCategory, 14);
                 put(PNStatusCategory.PNTLSUntrustedCertificateCategory, 15);
                 put(PNStatusCategory.PNRequestMessageCountExceededCategory, 16);
-                put(PNStatusCategory.PNReconnectionAttemptsExhausted, 0);
+                put(PNStatusCategory.PNReconnectionAttemptsExhaustedCategory, 0);
             }};
 
     private static final Map<PNOperationType, Integer> operationAsNumber =
@@ -288,6 +298,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 break;
             case SIGNAL_METHOD:
                 handleSignal(clientId, call, result);
+                break;
+            case RECONNECT_METHOD:
+                handleReconnect(clientId, call, result);
                 break;
             default:
                 result.notImplemented();
@@ -455,9 +468,9 @@ public class PubnubPlugin implements MethodCallHandler {
 
                         List<String> items = new ArrayList<>();
 
-                        if(res != null) {
+                        if (res != null) {
                             for (PNHistoryItemResult item : res.getMessages()) {
-                                String message = "{\"message\": " +  item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
+                                String message = "{\"message\": " + item.getEntry().toString() + ", \"timetoken\": " + item.getTimetoken() + "}";
 
                                 items.add(message); // returns something like:
                             }
@@ -662,6 +675,12 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
+    private void handleReconnect(final String clientId, MethodCall call, Result result) {
+        PubNub client = getClient(clientId, call);
+        client.reconnect();
+        result.success(true);
+    }
+
     private void handlePresence(final String clientId, final MethodCall call, Result result) {
         Map<String, String> state = call.argument(STATE_KEY);
         List<String> channels = call.argument(CHANNELS_KEY);
@@ -707,7 +726,7 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
-    private void handlePublish(final String clientId, MethodCall call, Result result) {
+    private void handlePublish(final String clientId, MethodCall call, final Result result) {
         List<String> channels = call.argument(CHANNELS_KEY);
         if (channels == null || channels.isEmpty()) {
             throw new IllegalArgumentException("Publish channels can't be null or empty");
@@ -722,14 +741,24 @@ public class PubnubPlugin implements MethodCallHandler {
         for (String channel : channels) {
             client.publish().channel(channel).message(message).meta(metadata).async(new PNCallback<PNPublishResult>() {
                 @Override
-                public void onResponse(PNPublishResult result, PNStatus status) {
+                public void onResponse(PNPublishResult pnResult, final PNStatus status) {
+                    final Map<String, Object> map = new HashMap<String, Object>() {{
+                        put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
+                        PNOperationType operationType = status.getOperation();
+                        put(ERROR_OPERATION_KEY, operationType == null ? null : operationAsNumber.get(operationType));
+                        PNStatusCategory statusCategory = status.getCategory();
+                        put(STATUS_CATEGORY_KEY, statusCategory == null ? null : categoriesAsNumber.get(statusCategory));
+                        put(UUID_KEY, status.getUuid());
+                        put(STATUS_CODE, status.getStatusCode());
+                        put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
+                        put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
+                        put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
+                    }};
+                        result.success(map);
                     handleStatus(clientId, status);
                 }
             });
         }
-
-
-        result.success(true);
     }
 
     private void handleSignal(final String clientId, MethodCall call, Result result) {
@@ -757,13 +786,23 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
-    private void handleStatus(String clientId, PNStatus status) {
+    private void handleStatus(final String clientId, final PNStatus status) {
 
         System.out.println("Client " + clientId + " status: " + status);
         if (status.isError()) {
-            Map<String, Object> map = new HashMap<>();
-            map.put(ERROR_OPERATION_KEY, operationAsNumber.get(status.getOperation()));
-            map.put(ERROR_KEY, status.getErrorData().toString());
+            final Map<String, Object> map = new HashMap<String, Object>() {{
+                put(CLIENT_ID_KEY, clientId);
+                PNStatusCategory statusCategory = status.getCategory();
+                put(STATUS_CATEGORY_KEY, statusCategory == null ? null : categoriesAsNumber.get(statusCategory));
+                PNOperationType operationType = status.getOperation();
+                put(ERROR_OPERATION_KEY,
+                        operationType == null ? null : operationAsNumber.get(operationType));
+                put(UUID_KEY, status.getUuid());
+                put(STATUS_CODE, status.getStatusCode());
+                put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
+                put(ERROR_KEY, status.getErrorData().toString());
+                put(ERROR_INFO_KEY, categoriesAsNumber.get(status.getErrorData().getInformation()));
+            }};
             errorStreamHandler.sendError(clientId, map);
         } else {
             statusStreamHandler.sendStatus(clientId, status);
@@ -803,12 +842,12 @@ public class PubnubPlugin implements MethodCallHandler {
         }
 
         @Override
-        public void user(PubNub pubnub, PNUserResult pnUserResult) {
+        public void uuid(PubNub pubnub, PNUUIDMetadataResult pnUUIDMetadataResult) {
 
         }
 
         @Override
-        public void space(PubNub pubnub, PNSpaceResult pnSpaceResult) {
+        public void channel(PubNub pubnub, PNChannelMetadataResult pnChannelMetadataResult) {
 
         }
 
@@ -819,6 +858,11 @@ public class PubnubPlugin implements MethodCallHandler {
 
         @Override
         public void messageAction(PubNub pubnub, PNMessageActionResult pnMessageActionResult) {
+
+        }
+
+        @Override
+        public void file(PubNub pubnub, PNFileEventResult pnFileEventResult) {
 
         }
     }
@@ -855,7 +899,7 @@ public class PubnubPlugin implements MethodCallHandler {
                     put(CLIENT_ID_KEY, clientId);
                     put(UUID_KEY, publisher);
                     put(CHANNEL_KEY, channel);
-                    put(MESSAGE_KEY,message);
+                    put(MESSAGE_KEY, message);
                 }};
                 executor.execute(new Runnable() {
                     @Override
@@ -870,19 +914,20 @@ public class PubnubPlugin implements MethodCallHandler {
 
     public static class StatusStreamHandler extends BaseStreamHandler {
 
-        private static final String STATUS_CATEGORY_KEY = "category";
-        private static final String STATUS_OPERATION_KEY = "operation";
 
         void sendStatus(final String clientId, final PNStatus status) {
             if (super.sink != null) {
                 final Map<String, Object> map = new HashMap<String, Object>() {{
                     put(CLIENT_ID_KEY, clientId);
-                    put(STATUS_CATEGORY_KEY, categoriesAsNumber.get(status.getCategory()));
+                    PNStatusCategory statusCategory = status.getCategory();
+                    put(STATUS_CATEGORY_KEY, statusCategory == null ? null : categoriesAsNumber.get(statusCategory));
                     PNOperationType operationType = status.getOperation();
                     put(STATUS_OPERATION_KEY,
-                            operationType == null ? null : operationAsNumber.get(status.getOperation()));
+                            operationType == null ? null : operationAsNumber.get(operationType));
                     put(UUID_KEY, status.getUuid());
                     put(CHANNELS_KEY, status.getAffectedChannels());
+                    put(STATUS_CODE, status.getStatusCode());
+                    put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
                 }};
                 executor.execute(new Runnable() {
                     @Override

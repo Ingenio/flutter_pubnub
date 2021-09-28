@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_pubnub'
-  s.version          = '0.5.0'
+  s.version          = '0.5.1'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC
 A new flutter plugin project.
@@ -15,7 +15,7 @@ A new flutter plugin project.
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-  s.dependency 'PubNub','~> 4.13.1'
-  s.ios.deployment_target = '8.0'
+  s.dependency 'PubNub','~> 4.16.2'
+  s.ios.deployment_target = '9.0'
 end
 

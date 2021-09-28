@@ -19,6 +19,7 @@ NSString *const PRESENCE_METHOD = @"presence";
 NSString *const UNSUBSCRIBE_METHOD = @"unsubscribe";
 NSString *const DISPOSE_METHOD = @"dispose";
 NSString *const UUID_METHOD = @"uuid";
+NSString *const RECONNECT_METHOD = @"reconnect";
 
 NSString *const ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = @"addChannelsToChannelGroup";
 NSString *const LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = @"listChannelsForChannelGroup";
@@ -58,6 +59,12 @@ NSString *const START_KEY = @"start";
 NSString *const END_KEY = @"end";
 NSString *const PUSH_TYPE_KEY = @"pushType";
 NSString *const PUSH_TOKEN_KEY = @"pushToken";
+NSString *const ERROR_INFO_KEY = @"information";
+NSString *const RESTORE = @"restore";
+NSString *const MESSAGE_PUBLISHING_STATUS_KEY = @"isPublished";
+NSString *const STATUS_CODE_KEY = @"statusCode";
+NSString *const MESSAGE_PUBLISHING_CHANNELS_KEY = @"affectedChannels";
+NSString *const REQUEST_KEY = @"request";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -129,6 +136,8 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
             [self handleRemoveAllPushNotificationsFromDeviceWithPushToken:call clientId:clientId result:result];
         } else if  ([SIGNAL_METHOD isEqualToString:call.method]) {
             [self handleSignal:call clientId:clientId result:result];
+        } else if ([RECONNECT_METHOD isEqualToString:call.method]) {
+            [self handleReconnect:call clientId:clientId result:result];
         }
         
         else {
@@ -157,7 +166,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     NSLog(@"FlutterPubnubPlugin createClient clientId: %@ method: %@", clientId, call.method);
     
     PNConfiguration *config = [self configFromCall:call];
-    
+
     PubNub *client = [PubNub clientWithConfiguration:config];
     
     NSString *filter = call.arguments[FILTER_KEY];
@@ -192,6 +201,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     id presenceTimeout = call.arguments[PRESENCE_TIMEOUT_KEY];
     id uuid = call.arguments[UUID_KEY];
     
+    id restore = call.arguments[RESTORE];
     
     config =
     [PNConfiguration configurationWithPublishKey:publishKey
@@ -201,6 +211,13 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     if(uuid != [NSNull null]) {
         NSLog(@"configFromCall: setting uuid");
         config.uuid = uuid;
+    }
+    
+
+  
+    if(restore != [NSNull null]) {
+        NSLog(@"configFromCall: setting restore: %d", [restore boolValue]);
+       config.catchUpOnSubscriptionRestore = [restore boolValue];
     }
     
     if(authKey != [NSNull null]) {
@@ -602,11 +619,18 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     for(NSString *channel in channels) {
         [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
             __strong __typeof(self) strongSelf = weakSelf;
+                NSDictionary *resultData = @{MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
+                                             ERROR_OPERATION_KEY:[PubnubPlugin getOperationAsNumber:status.operation],
+                                             STATUS_CATEGORY_KEY:[PubnubPlugin getOperationAsNumber:status.category],
+                                             UUID_KEY: status.uuid,
+                                             STATUS_CODE_KEY: @(status.statusCode),
+                                             MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
+                                             REQUEST_KEY: status.clientRequest.URL.absoluteString,
+                                             ERROR_KEY:status.isError ? status.errorData.information :@"" };
+                result(resultData);
             [strongSelf handleStatus:status clientId:clientId];
         }];
     }
-    
-    result(NULL);
 }
 
 - (void) handleSignal:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
@@ -654,7 +678,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
           withCompletion:^(PNClientStateUpdateStatus *status) {
             
             if (status.isError) {
-                NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+              PNErrorStatus *errorStatus = (PNErrorStatus *)status;
+              PNErrorData *errorData = errorStatus.errorData;
+              
+              NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @"cannot deserialize 1", STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
                 [self.errorStreamHandler sendError:result];
             } else {
                 [self.statusStreamHandler sendStatus:status clientId:clientId];
@@ -680,11 +707,19 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     result(NULL);
 }
 
+- (void) handleReconnect:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSLog(@"Reconnect client: %@", clientId);
+    [self handleSubscribe:call clientId:clientId result:result];
+}
+
+
 - (void)handleStatus:(PNStatus *)status clientId:(NSString *)clientId {
-    if (status.isError) {
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+  if (status.isError && [status isMemberOfClass:PNErrorStatus.class]) {
+    PNErrorStatus *errorStatus = (PNErrorStatus *)status;
+    PNErrorData *errorData = errorStatus.errorData;
+    
+      NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:errorStatus.operation], STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], UUID_KEY: status.uuid, STATUS_CODE_KEY: @(status.statusCode), REQUEST_KEY: status.clientRequest.URL.absoluteString, ERROR_KEY: @"cannot deserialize 2", ERROR_INFO_KEY: errorData.information};
         [self.errorStreamHandler sendError:result];
-        
     } else {
         [self.statusStreamHandler sendStatus:status clientId:clientId];
     }
@@ -896,7 +931,7 @@ typedef enum {
             affectedChannels = subscribeStatus.subscribedChannels;
         }
         
-        self.eventSink(@{CLIENT_ID_KEY: clientId, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:status.category],STATUS_OPERATION_KEY: [PubnubPlugin getOperationAsNumber:status.operation], UUID_KEY: status.uuid, CHANNELS_KEY: affectedChannels == NULL ? @[] : affectedChannels});
+        self.eventSink(@{CLIENT_ID_KEY: clientId, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:status.category],STATUS_OPERATION_KEY: [PubnubPlugin getOperationAsNumber:status.operation], UUID_KEY: status.uuid, CHANNELS_KEY: affectedChannels == NULL ? @[] : affectedChannels, STATUS_CODE_KEY: @(status.statusCode), REQUEST_KEY: status.clientRequest.URL.absoluteString });
     }
 }
 

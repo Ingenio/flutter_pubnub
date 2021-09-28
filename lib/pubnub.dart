@@ -13,16 +13,22 @@ class PubNubConfig {
   static final _presenceTimeoutKey = 'presenceTimeout';
   static final _uuidKey = 'uuid';
   static final _filterKey = 'filter';
+  static final _restore = 'restore';
   static final _uuid = Uuid();
 
   PubNubConfig(this.publishKey, this.subscribeKey,
-      {this.authKey, this.presenceTimeout, this.uuid, this.filter});
+      {this.authKey,
+      this.presenceTimeout,
+      this.uuid,
+      this.filter,
+      this.restore = false});
 
   final String publishKey;
   final String subscribeKey;
   final String? authKey;
   final int? presenceTimeout;
   final String? uuid;
+  final bool restore;
   final String? filter;
 
   Map<String, dynamic> toMap() {
@@ -33,6 +39,7 @@ class PubNubConfig {
       _uuidKey: uuid,
       _filterKey: filter,
       _authKey: authKey,
+      _restore: restore,
     };
 
     if (presenceTimeout != null) {
@@ -58,6 +65,7 @@ class PubNub {
   static const _unsubscribeMethod = 'unsubscribe';
   static const _disposeMethod = 'dispose';
   static const _uuidMethod = 'uuid';
+  static const _reconnectMethod = 'reconnect';
   static const _addChannelsToChannelGroupMethod = 'addChannelsToChannelGroup';
   static const _listChannelsForChannelGroupMethod =
       'listChannelsForChannelGroup';
@@ -130,6 +138,11 @@ class PubNub {
     return await _invokeMethod(_subscribeMethod, {_channelsKey: channels});
   }
 
+  /// Reconnect client
+  Future<void> reconnect() async {
+    return await _invokeMethod(_reconnectMethod);
+  }
+
   /// Set Presence State on a specified channel
   Future<void> presence(
       List<String> channels, Map<String, String> state) async {
@@ -138,7 +151,7 @@ class PubNub {
   }
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
-  Future<void> publish(List<String> channels, Map message,
+  Future<Map> publish(List<String> channels, Map message,
       {Map? metadata}) async {
     Map args = {_messageKey: message, _channelsKey: channels};
 
