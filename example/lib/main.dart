@@ -1,11 +1,15 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pubnub/pubnub.dart';
 
-void main() => runApp(MyApp());
+void main() async {
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
 
 class MyApp extends StatefulWidget {
   @override
@@ -20,7 +24,7 @@ class _MyAppState extends State<MyApp> {
       uuid: '127c1ab5-fc7f-4c46-8460-3207b6782007',
       filter: 'uuid != "127c1ab5-fc7f-4c46-8460-3207b6782007"'));
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   @override
   void initState() {
@@ -50,27 +54,23 @@ class _MyAppState extends State<MyApp> {
 
     if (Platform.isIOS) iOSPermission();
 
-    _firebaseMessaging.configure(
-      onMessage: (Map<String, dynamic> message) async {
-        print("onMessage: $message");
-        sendEvent('PUSH MESSAGE', message.toString());
-      },
-      onLaunch: (Map<String, dynamic> message) async {
-        print("onLaunch: $message");
-      },
-      onResume: (Map<String, dynamic> message) async {
-        print("onResume: $message");
-      },
-    );
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("onMessage: $message");
+      sendEvent('PUSH MESSAGE', message.toString());
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("onMessageOpenedApp: $message");
+    });
   }
 
-  void iOSPermission() {
-    _firebaseMessaging.requestNotificationPermissions(
-        IosNotificationSettings(sound: true, badge: true, alert: true));
-    _firebaseMessaging.onIosSettingsRegistered
-        .listen((IosNotificationSettings settings) {
-      print("Settings registered: $settings");
-    });
+  void iOSPermission() async {
+    NotificationSettings settings = await _firebaseMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    print("Settings registered: $settings");
   }
 
   Future sendEvent(String eventName, String message) async {
@@ -251,7 +251,7 @@ class _MyAppState extends State<MyApp> {
                         _firebaseMessaging.getToken().then((token) {
                           print("Token: $token");
                           _firstUserClient.addPushNotificationsOnChannels(
-                              PushType.FCM, token, ['Channel']);
+                              PushType.FCM, token!, ['Channel']);
                           sendEvent(
                               'ADD CHANNELS', ['Channel'].toList().toString());
                         });
@@ -263,7 +263,7 @@ class _MyAppState extends State<MyApp> {
                         _firebaseMessaging.getToken().then((token) {
                           print("Token: $token");
                           _firstUserClient
-                              .listPushNotificationChannels(PushType.FCM, token)
+                              .listPushNotificationChannels(PushType.FCM, token!)
                               .then((channels) {
                             print("Push Notes Channels: $channels");
                             sendEvent(
@@ -278,7 +278,7 @@ class _MyAppState extends State<MyApp> {
                         _firebaseMessaging.getToken().then((token) {
                           print("Token: $token");
                           _firstUserClient.removePushNotificationsFromChannels(
-                              PushType.FCM, token, ['Channel']);
+                              PushType.FCM, token!, ['Channel']);
                           sendEvent('REMOVE CHANNELS',
                               ['Channel'].toList().toString());
                         });
@@ -291,8 +291,8 @@ class _MyAppState extends State<MyApp> {
                           print("Token: $token");
                           _firstUserClient
                               .removeAllPushNotificationsFromDeviceWithPushToken(
-                                  PushType.FCM, token);
-                          sendEvent('REMOVE ALL CHANNELS', token);
+                                  PushType.FCM, token!);
+                          sendEvent('REMOVE ALL CHANNELS', token!);
                         });
                       },
                       child: Text('Remove All')),
@@ -305,7 +305,7 @@ class _MyAppState extends State<MyApp> {
                       onPressed: () {
                         _firebaseMessaging.getToken().then((token) {
                           print("Token: $token");
-                          sendEvent('TOKEN', token);
+                          sendEvent('TOKEN', token!);
                         });
                       },
                       child: Text('Token')),

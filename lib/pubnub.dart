@@ -25,11 +25,11 @@ class PubNubConfig {
 
   final String publishKey;
   final String subscribeKey;
-  final String authKey;
-  final int presenceTimeout;
-  final String uuid;
+  final String? authKey;
+  final int? presenceTimeout;
+  final String? uuid;
   final bool restore;
-  final String filter;
+  final String? filter;
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> args = {
@@ -126,7 +126,7 @@ class PubNub {
 
   Future<dynamic> _invokeMethod(
     String method, [
-    Map<dynamic, dynamic> arguments,
+    Map<dynamic, dynamic>? arguments,
   ]) {
     arguments ??= <dynamic, dynamic>{};
     arguments.addAll(config);
@@ -152,7 +152,7 @@ class PubNub {
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
   Future<Map> publish(List<String> channels, Map message,
-      {Map metadata}) async {
+      {Map? metadata}) async {
     Map args = {_messageKey: message, _channelsKey: channels};
 
     if (metadata != null) {
@@ -194,7 +194,7 @@ class PubNub {
   // New: https://www.pubnub.com/docs/android-java/api-reference-channel-groups#removing-channels-args-1
 
   ///  Lists all the channels of the channel group.
-  Future<List> history(String channel, int limit, {int start, int end}) async {
+  Future<List> history(String channel, int limit, {int? start, int? end}) async {
     return await _invokeMethod(_historyMethod, {
       _channelKey: channel,
       _limitKey: limit,
