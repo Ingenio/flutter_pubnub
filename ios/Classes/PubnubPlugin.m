@@ -65,6 +65,7 @@ NSString *const MESSAGE_PUBLISHING_STATUS_KEY = @"isPublished";
 NSString *const STATUS_CODE_KEY = @"statusCode";
 NSString *const MESSAGE_PUBLISHING_CHANNELS_KEY = @"affectedChannels";
 NSString *const REQUEST_KEY = @"request";
+NSString *const WITH_PRESENCE_KEY = @"withPresence";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -693,6 +694,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 - (void) handleSubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    bool withPresence = [call.arguments[WITH_PRESENCE_KEY] boolValue];
     
     NSLog(@"Subscribe: %@", channels);
     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
@@ -702,7 +704,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     PubNub *client = [self getClient:clientId call:call];
     
-    [client subscribeToChannels:channels withPresence:YES];
+    [client subscribeToChannels:channels withPresence:withPresence];
     
     result(NULL);
 }
