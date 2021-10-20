@@ -237,9 +237,12 @@ class PubNub {
   }
 
   /// Subscribe to a list of channels
-  Future<void> subscribeToChannelGroups(List<String> channelGroups) async {
-    return await _invokeMethod(
-        _subscribeToChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+  Future<void> subscribeToChannelGroups(List<String> channelGroups,
+      {bool withPresence = false}) async {
+    return await _invokeMethod(_subscribeToChannelGroupsMethod, {
+      _channelGroupsKey: channelGroups,
+      _withPresenceKey: withPresence,
+    });
   }
 
   /// Subscribe to a list of channels

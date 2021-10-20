@@ -580,6 +580,7 @@ public class PubnubPlugin implements MethodCallHandler {
 
     private void handleSubscribeToChannelGroups(String clientId, MethodCall call, Result result) {
         List<String> channelGroups = call.argument(CHANNEL_GROUPS_KEY);
+        boolean withPresence = call.argument(WITH_PRESENCE_KEY);
 
         if (channelGroups == null || channelGroups.isEmpty()) {
             throw new IllegalArgumentException("Channel groups can't be null or empty");
@@ -589,7 +590,11 @@ public class PubnubPlugin implements MethodCallHandler {
 
         PubNub client = getClient(clientId, call);
 
-        client.subscribe().channelGroups(channelGroups).execute();
+        SubscribeBuilder builder = client.subscribe().channelGroups(channelGroups);
+        if (withPresence) {
+            builder.withPresence();
+        }
+        builder.execute();
         result.success(true);
     }
 

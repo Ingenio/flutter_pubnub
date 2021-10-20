@@ -544,6 +544,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
 - (void) handleSubscribeToChannelGroups:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channelGroups = call.arguments[CHANNEL_GROUPS_KEY];
+    bool withPresence = [call.arguments[WITH_PRESENCE_KEY] boolValue];
     
     if((id)channelGroups == [NSNull null] || channelGroups == NULL || [channelGroups count] == 0) {
         @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel groups can't be null or empty"userInfo:nil];
@@ -551,7 +552,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     PubNub *client = [self getClient:clientId call:call];
     
-    [client subscribeToChannelGroups:channelGroups withPresence:YES];
+    [client subscribeToChannelGroups:channelGroups withPresence:withPresence];
     
     result(NULL);
 }
@@ -577,7 +578,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
         NSLog(@"Unsubscribing from channels: %@", channels);
-        [client unsubscribeFromChannels:channels withPresence:NO];
+        [client unsubscribeFromChannels:channels withPresence:YES];
     } else {
         NSLog(@"Unsubscribing ALL Channels");
         [client unsubscribeFromAll];
