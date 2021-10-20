@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.pubnub.api.PNConfiguration;
 import com.pubnub.api.PubNub;
+import com.pubnub.api.builder.SubscribeBuilder;
 import com.pubnub.api.callbacks.PNCallback;
 import com.pubnub.api.callbacks.SubscribeCallback;
 import com.pubnub.api.enums.PNOperationType;
@@ -111,6 +112,8 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String STATUS_CODE = "statusCode";
     private static final String MESSAGE_PUBLISHING_CHANNELS_KEY = "affectedChannels";
     private static final String REQUEST_KEY = "request";
+    private static final String WITH_PRESENCE_KEY = "withPresence";
+
 
     private static final String CHANNEL_GROUP_KEY = "channelGroup";
     private static final String CHANNEL_GROUPS_KEY = "channelGroups";
@@ -577,6 +580,7 @@ public class PubnubPlugin implements MethodCallHandler {
 
     private void handleSubscribeToChannelGroups(String clientId, MethodCall call, Result result) {
         List<String> channelGroups = call.argument(CHANNEL_GROUPS_KEY);
+        boolean withPresence = call.argument(WITH_PRESENCE_KEY);
 
         if (channelGroups == null || channelGroups.isEmpty()) {
             throw new IllegalArgumentException("Channel groups can't be null or empty");
@@ -586,7 +590,11 @@ public class PubnubPlugin implements MethodCallHandler {
 
         PubNub client = getClient(clientId, call);
 
-        client.subscribe().channelGroups(channelGroups).execute();
+        SubscribeBuilder builder = client.subscribe().channelGroups(channelGroups);
+        if (withPresence) {
+            builder.withPresence();
+        }
+        builder.execute();
         result.success(true);
     }
 
@@ -667,11 +675,16 @@ public class PubnubPlugin implements MethodCallHandler {
     private void handleSubscribe(final String clientId, MethodCall call, Result result) {
         PubNub client = getClient(clientId, call);
         List<String> channels = call.argument(CHANNELS_KEY);
+        boolean withPresence = call.argument(WITH_PRESENCE_KEY);
         if (channels == null || channels.isEmpty()) {
             throw new IllegalArgumentException("Subscribe channels can't be null or empty");
         }
         System.out.println("SUBSCRIBE CLIENT: " + clientId);
-        client.subscribe().channels(channels).withPresence().execute();
+        SubscribeBuilder builder = client.subscribe().channels(channels);
+        if (withPresence) {
+            builder.withPresence();
+        }
+        builder.execute();
         result.success(true);
     }
 

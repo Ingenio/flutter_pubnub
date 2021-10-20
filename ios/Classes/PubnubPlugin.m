@@ -65,6 +65,7 @@ NSString *const MESSAGE_PUBLISHING_STATUS_KEY = @"isPublished";
 NSString *const STATUS_CODE_KEY = @"statusCode";
 NSString *const MESSAGE_PUBLISHING_CHANNELS_KEY = @"affectedChannels";
 NSString *const REQUEST_KEY = @"request";
+NSString *const WITH_PRESENCE_KEY = @"withPresence";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -543,6 +544,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
 - (void) handleSubscribeToChannelGroups:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channelGroups = call.arguments[CHANNEL_GROUPS_KEY];
+    bool withPresence = [call.arguments[WITH_PRESENCE_KEY] boolValue];
     
     if((id)channelGroups == [NSNull null] || channelGroups == NULL || [channelGroups count] == 0) {
         @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel groups can't be null or empty"userInfo:nil];
@@ -550,7 +552,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     PubNub *client = [self getClient:clientId call:call];
     
-    [client subscribeToChannelGroups:channelGroups withPresence:YES];
+    [client subscribeToChannelGroups:channelGroups withPresence:withPresence];
     
     result(NULL);
 }
@@ -576,7 +578,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
         NSLog(@"Unsubscribing from channels: %@", channels);
-        [client unsubscribeFromChannels:channels withPresence:NO];
+        [client unsubscribeFromChannels:channels withPresence:YES];
     } else {
         NSLog(@"Unsubscribing ALL Channels");
         [client unsubscribeFromAll];
@@ -693,6 +695,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 - (void) handleSubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    bool withPresence = [call.arguments[WITH_PRESENCE_KEY] boolValue];
     
     NSLog(@"Subscribe: %@", channels);
     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
@@ -702,7 +705,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     PubNub *client = [self getClient:clientId call:call];
     
-    [client subscribeToChannels:channels withPresence:YES];
+    [client subscribeToChannels:channels withPresence:withPresence];
     
     result(NULL);
 }

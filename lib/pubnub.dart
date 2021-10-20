@@ -99,6 +99,7 @@ class PubNub {
   static const _endKey = 'end';
   static const _pushTypeKey = 'pushType';
   static const _pushTokenKey = 'pushToken';
+  static const _withPresenceKey = 'withPresence';
 
   static const _statusCategoryKey = 'category';
   static const _statusOperationKey = 'operation';
@@ -134,8 +135,14 @@ class PubNub {
   }
 
   /// Subscribe to a list of channels
-  Future<void> subscribe(List<String> channels) async {
-    return await _invokeMethod(_subscribeMethod, {_channelsKey: channels});
+  Future<void> subscribe(
+    List<String> channels, {
+    bool withPresence = false,
+  }) async {
+    return await _invokeMethod(_subscribeMethod, {
+      _channelsKey: channels,
+      _withPresenceKey: withPresence,
+    });
   }
 
   /// Reconnect client
@@ -230,9 +237,12 @@ class PubNub {
   }
 
   /// Subscribe to a list of channels
-  Future<void> subscribeToChannelGroups(List<String> channelGroups) async {
-    return await _invokeMethod(
-        _subscribeToChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+  Future<void> subscribeToChannelGroups(List<String> channelGroups,
+      {bool withPresence = false}) async {
+    return await _invokeMethod(_subscribeToChannelGroupsMethod, {
+      _channelGroupsKey: channelGroups,
+      _withPresenceKey: withPresence,
+    });
   }
 
   /// Subscribe to a list of channels
