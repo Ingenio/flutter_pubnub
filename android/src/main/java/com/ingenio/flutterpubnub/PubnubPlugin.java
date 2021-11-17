@@ -72,7 +72,7 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String DISPOSE_METHOD = "dispose";
     private static final String UUID_METHOD = "uuid";
     private static final String RECONNECT_METHOD = "reconnect";
-    private static final String ADD_MESSAGE_ACTION_METHOD = "addMessageActionMethod";
+    private static final String ADD_MESSAGE_ACTION_METHOD = "addMessageAction";
 
     private static final String ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = "addChannelsToChannelGroup";
     private static final String LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = "listChannelsForChannelGroup";
@@ -128,9 +128,9 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String PUSH_TYPE_KEY = "pushType";
     private static final String PUSH_TOKEN_KEY = "pushToken";
 
-    private static final String  TIME_TOKEN_KEY = "timeToken";
-    private static final String  ACTION_TYPE_KEY = "actionType";
-    private static final String  ACTION_VALUE_KEY = "actionValue";
+    private static final String TIME_TOKEN_KEY = "timeToken";
+    private static final String ACTION_TYPE_KEY = "actionType";
+    private static final String ACTION_VALUE_KEY = "actionValue";
 
     private enum PushType {
         APNS(0),
