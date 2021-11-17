@@ -15,6 +15,7 @@ This plugin is not provided nor supported by PubNub. It was implemented part of 
 * Push notifications
 * Status 
 * Error handling
+* Action Messages
 
 **IMPORTANT NOTES**:
 
@@ -64,6 +65,7 @@ PubNubConfig(this.publishKey, this.subscribeKey, {this.authKey, this.presenceTim
 * [Retrieve history](#Retrieve-history)
 * [Push Notifications](#Push-Notifications)
 * [Signals](#Signals)
+* [Message Actions](#Message-actions)
 * [Cleanup](#Cleanup)
 
 ## Creating one or more clients
@@ -162,6 +164,14 @@ A client can publish messages to one or many channels
 
 ```
 
+The publish returns a Future<Map> with message related items such as uuid, affected channels, timeToken, ...
+
+```dart
+
+ _client.publish((['Test-Channel1'], {'message': 'Hello World!'}).then((result) => print('Time Token: ${result['timeToken']}'));
+
+```
+
 As previously described, if a filter has been set and if we need to react to it, metadata related to the configured filter must be passed during publication.
 
 ```dart
@@ -197,6 +207,8 @@ _client.onPresenceReceived.listen((presence) => print('Presence:${presence.toStr
 _client.onMessageReceived.listen((message) => print('Message:$message'));
 
 _client.onErrorReceived.listen((error) => print('Error:$error'));
+
+_client.onMessageActionReceived.listen((action) => print('Action:$action'));
 
 ```
 
@@ -319,7 +331,22 @@ Signals allow to send small payloads (30 bytes max) in a very efficient and cost
 _client.signal(['Channel2'], {'signal': 'Hello Signal'});
 
 ```
+## Message Actions
 
+Message actions allow to receive message actions as well as adding some.
+Each published message in pubNub has an associated time token. The publish method of the present plugin is returning a timeToken attribute longside others. Such attribute must be used when adding message actions, defined by a type and a value.
+
+For example, if you would like to mark a message as received, you could pass the channel, the time token of the original message, a type, for example 'receipt' and a value, for example 'received' or 'read' if you want to indicate tht the message was read as iMessage does on iPhone.
+
+``` dart
+_client.addMessageAction(['Channel2'], 42154216241, 'receipt', 'received');
+```
+
+In order to listen for message actions on messages, it is as easy as registering for message action events:
+
+``` dart
+_client.onMessageActionReceived.listen((action) => print('Action:$action'));
+```
 
 ## Cleanup
 
