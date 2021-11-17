@@ -7,12 +7,14 @@
 @class StatusStreamHandler;
 @class ErrorStreamHandler;
 @class PresenceStreamHandler;
+@class MessageActionStreamHandler;
 
 @interface PubnubPlugin : NSObject<FlutterPlugin>
 @property (nonatomic, strong) MessageStreamHandler *messageStreamHandler;
 @property (nonatomic, strong) StatusStreamHandler *statusStreamHandler;
 @property (nonatomic, strong) PresenceStreamHandler *presenceStreamHandler;
 @property (nonatomic, strong) ErrorStreamHandler *errorStreamHandler;
+@property (nonatomic, strong) MessageActionStreamHandler *messageActionStreamHandler;
 @end
 
 @interface MessageStreamHandler : NSObject<FlutterStreamHandler>
@@ -44,5 +46,13 @@
 
 @end
 
+@interface MessageActionStreamHandler : NSObject <FlutterStreamHandler>
+@property (nonatomic, strong) FlutterEventSink eventSink;
+
+- (void) sendMessageAction:(PNMessageActionResult *)action clientId:(NSString *)clientId;
+
+@end
+
 @interface MissingArgumentException : NSException
 @end
+
