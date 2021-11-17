@@ -243,7 +243,7 @@ public class PubnubPlugin implements MethodCallHandler {
         new EventChannel(registrar.messenger(), ERROR_CHANNEL_NAME)
                 .setStreamHandler(instance.errorStreamHandler);
 
-        new EventChannel(registrar.messenger(), MESSAGE_CHANNEL_NAME)
+        new EventChannel(registrar.messenger(), MESSAGE_ACTION_CHANNEL_NAME)
                 .setStreamHandler(instance.messageActionStreamHandler);
 
     }
