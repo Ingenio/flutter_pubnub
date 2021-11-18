@@ -15,7 +15,7 @@ This plugin is not provided nor supported by PubNub. It was implemented part of 
 * Push notifications
 * Status 
 * Error handling
-* Action Messages
+* Message Actions
 
 **IMPORTANT NOTES**:
 
