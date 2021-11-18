@@ -23,6 +23,8 @@ import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsDeleteGroupRe
 import com.pubnub.api.models.consumer.channel_group.PNChannelGroupsRemoveChannelResult;
 import com.pubnub.api.models.consumer.history.PNHistoryItemResult;
 import com.pubnub.api.models.consumer.history.PNHistoryResult;
+import com.pubnub.api.models.consumer.message_actions.PNAddMessageActionResult;
+import com.pubnub.api.models.consumer.message_actions.PNMessageAction;
 import com.pubnub.api.models.consumer.objects_api.channel.PNChannelMetadataResult;
 import com.pubnub.api.models.consumer.objects_api.membership.PNMembershipResult;
 import com.pubnub.api.models.consumer.objects_api.uuid.PNUUIDMetadataResult;
@@ -61,6 +63,7 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String STATUS_CHANNEL_NAME = "flutter.ingenio.com/pubnub_status";
     private static final String PRESENCE_CHANNEL_NAME = "flutter.ingenio.com/pubnub_presence";
     private static final String ERROR_CHANNEL_NAME = "flutter.ingenio.com/pubnub_error";
+    private static final String MESSAGE_ACTION_CHANNEL_NAME = "flutter.ingenio.com/message_action";
 
     private static final String SUBSCRIBE_METHOD = "subscribe";
     private static final String PUBLISH_METHOD = "publish";
@@ -69,7 +72,7 @@ public class PubnubPlugin implements MethodCallHandler {
     private static final String DISPOSE_METHOD = "dispose";
     private static final String UUID_METHOD = "uuid";
     private static final String RECONNECT_METHOD = "reconnect";
-
+    private static final String ADD_MESSAGE_ACTION_METHOD = "addMessageAction";
 
     private static final String ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = "addChannelsToChannelGroup";
     private static final String LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = "listChannelsForChannelGroup";
@@ -124,6 +127,10 @@ public class PubnubPlugin implements MethodCallHandler {
 
     private static final String PUSH_TYPE_KEY = "pushType";
     private static final String PUSH_TOKEN_KEY = "pushToken";
+
+    private static final String TIME_TOKEN_KEY = "timeToken";
+    private static final String ACTION_TYPE_KEY = "actionType";
+    private static final String ACTION_VALUE_KEY = "actionValue";
 
     private enum PushType {
         APNS(0),
@@ -193,6 +200,7 @@ public class PubnubPlugin implements MethodCallHandler {
                 put(PNOperationType.PNAccessManagerAudit, 0);
                 put(PNOperationType.PNAccessManagerGrant, 0);
                 put(PNOperationType.PNSignalOperation, 21);
+                put(PNOperationType.PNAddMessageAction, 22);
             }};
 
     private Map<String, PubNub> clients = new HashMap<>();
@@ -201,6 +209,7 @@ public class PubnubPlugin implements MethodCallHandler {
     private StatusStreamHandler statusStreamHandler;
     private ErrorStreamHandler errorStreamHandler;
     private PresenceStreamHandler presenceStreamHandler;
+    private MessageActionStreamHandler messageActionStreamHandler
 
     private PubnubPlugin() {
         System.out.println("PubnubFlutterPlugin constructor");
@@ -208,6 +217,7 @@ public class PubnubPlugin implements MethodCallHandler {
         statusStreamHandler = new StatusStreamHandler();
         errorStreamHandler = new ErrorStreamHandler();
         presenceStreamHandler = new PresenceStreamHandler();
+        messageActionStreamHandler = new MessageActionStreamHandler();
     }
 
     /**
@@ -232,6 +242,9 @@ public class PubnubPlugin implements MethodCallHandler {
 
         new EventChannel(registrar.messenger(), ERROR_CHANNEL_NAME)
                 .setStreamHandler(instance.errorStreamHandler);
+
+        new EventChannel(registrar.messenger(), MESSAGE_ACTION_CHANNEL_NAME)
+                .setStreamHandler(instance.messageActionStreamHandler);
 
     }
 
@@ -304,6 +317,9 @@ public class PubnubPlugin implements MethodCallHandler {
                 break;
             case RECONNECT_METHOD:
                 handleReconnect(clientId, call, result);
+                break;
+            case ADD_MESSAGE_ACTION_METHOD:
+                handleAddMessageAction(clientId, call, result);
                 break;
             default:
                 result.notImplemented();
@@ -799,6 +815,59 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
+    private void handleAddMessageAction(final String clientId, MethodCall call, Result result) {
+        List<String> channels = call.argument(CHANNELS_KEY);
+        String actionType = call.argument(ACTION_TYPE_KEY);
+        String actionValue = call.argument(ACTION_VALUE_KEY);
+        Long timeToken = call.argument(TIME_TOKEN_KEY);
+
+        if (channels == null || channels.isEmpty()) {
+            throw new IllegalArgumentException("Signal channels can't be null or empty");
+        }
+
+        if (actionType == null || actionType.length() == 0) {
+            throw new IllegalArgumentException("Action Type can't be null or empty");
+        }
+
+        if (actionValue == null || actionValue.length() == 0) {
+            throw new IllegalArgumentException("Action Value can't be null or empty");
+        }
+
+        if (timeToken == null) {
+            throw new IllegalArgumentException("Time Token can't be null");
+        }
+
+        PubNub client = getClient(clientId, call);
+
+        for (String channel : channels) {
+            client.addMessageAction()
+                    .channel(channel)
+                    .messageAction(new PNMessageAction()
+                            .setType(actionType)
+                            .setValue(actionValue)
+                            .setMessageTimetoken(timeToken)
+                    )
+                    .async(new PNCallback<PNAddMessageActionResult>() {
+                        @Override
+                        public void onResponse(PNAddMessageActionResult result, PNStatus status) {
+
+                            final Map<String, Object> map = new HashMap<String, Object>() {{
+                                put(TIME_TOKEN_KEY, result.getMessageTimetoken()),
+                                put(ACTION_TYPE_KEY, result.getType()),
+                                put(ACTION_VALUE_KEY, result.getValue()),
+                                put(UUID_KEY, status.getUuid());
+                                put(STATUS_CODE, status.getStatusCode());
+                                put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
+                                put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
+                                put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
+                            }};
+                            result.success(map);
+                            handleStatus(clientId, status);
+                        }
+                    });
+        }
+    }
+
     private void handleStatus(final String clientId, final PNStatus status) {
 
         System.out.println("Client " + clientId + " status: " + status);
@@ -870,8 +939,9 @@ public class PubnubPlugin implements MethodCallHandler {
         }
 
         @Override
-        public void messageAction(PubNub pubnub, PNMessageActionResult pnMessageActionResult) {
-
+        public void messageAction(PubNub pubnub, PNMessageActionResult messageAction) {
+            System.out.println("CLIENT " + clientId + " IN MESSAGE ACTION");
+            messageActionStreamHandler.sendMessageAction(clientId, messageAction);
         }
 
         @Override
@@ -918,6 +988,28 @@ public class PubnubPlugin implements MethodCallHandler {
                     @Override
                     public void run() {
                         MessageStreamHandler.super.sink.success(map);
+                    }
+                });
+
+            }
+        }
+    }
+
+    public static class MessageActionStreamHandler extends BaseStreamHandler {
+
+        void sendMessageAction(final String clientId, final PNMessageActionResult action) {
+            if (super.sink != null) {
+                final Map<String, Object> map = new HashMap<String, Object>() {{
+                    put(CLIENT_ID_KEY, clientId);
+                    put(TIME_TOKEN_KEY, action.getData().getMessageTimetoken());
+                    put(ACTION_TYPE_KEY, action.getData().getType());
+                    put(ACTION_VALUE_KEY, action.getData().getValue());
+                    put(CHANNEL_KEY, action.getChannel());
+                }};
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        MessageActionStreamHandler.super.sink.success(map);
                     }
                 });
 
