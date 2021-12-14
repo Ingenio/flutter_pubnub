@@ -663,8 +663,7 @@ public class PubnubPlugin implements MethodCallHandler {
         PNConfiguration config = new PNConfiguration()
                 .setReconnectionPolicy(PNReconnectionPolicy.LINEAR)
                 .setPublishKey(publishKey)
-                .setSubscribeKey(subscribeKey)
-                .setMaximumReconnectionRetries(3);
+                .setSubscribeKey(subscribeKey);
         final int count = config.getMaximumReconnectionRetries();
         System.out.println("PubnubPlugin count: " + count);
 
