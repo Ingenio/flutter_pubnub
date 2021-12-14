@@ -209,7 +209,7 @@ public class PubnubPlugin implements MethodCallHandler {
     private StatusStreamHandler statusStreamHandler;
     private ErrorStreamHandler errorStreamHandler;
     private PresenceStreamHandler presenceStreamHandler;
-    private MessageActionStreamHandler messageActionStreamHandler
+    private MessageActionStreamHandler messageActionStreamHandler;
 
     private PubnubPlugin() {
         System.out.println("PubnubFlutterPlugin constructor");
@@ -700,7 +700,12 @@ public class PubnubPlugin implements MethodCallHandler {
         if (withPresence) {
             builder.withPresence();
         }
-        builder.execute();
+        try {
+            builder.execute();
+        }
+       catch (Exception e) {
+           result.success(false);
+       }
         result.success(true);
     }
 
@@ -816,7 +821,7 @@ public class PubnubPlugin implements MethodCallHandler {
         result.success(true);
     }
 
-    private void handleAddMessageAction(final String clientId, MethodCall call, Result result) {
+    private void handleAddMessageAction(final String clientId, MethodCall call, final Result actionResult) {
         List<String> channels = call.argument(CHANNELS_KEY);
         String actionType = call.argument(ACTION_TYPE_KEY);
         String actionValue = call.argument(ACTION_VALUE_KEY);
@@ -850,19 +855,19 @@ public class PubnubPlugin implements MethodCallHandler {
                     )
                     .async(new PNCallback<PNAddMessageActionResult>() {
                         @Override
-                        public void onResponse(PNAddMessageActionResult result, PNStatus status) {
+                        public void onResponse(final PNAddMessageActionResult result, final PNStatus status) {
 
                             final Map<String, Object> map = new HashMap<String, Object>() {{
-                                put(TIME_TOKEN_KEY, result.getMessageTimetoken()),
-                                put(ACTION_TYPE_KEY, result.getType()),
-                                put(ACTION_VALUE_KEY, result.getValue()),
+                                put(TIME_TOKEN_KEY, result.getMessageTimetoken());
+                                put(ACTION_TYPE_KEY, result.getType());
+                                put(ACTION_VALUE_KEY, result.getValue());
                                 put(UUID_KEY, status.getUuid());
                                 put(STATUS_CODE, status.getStatusCode());
                                 put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
                                 put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
                                 put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
                             }};
-                            result.success(map);
+                            actionResult.success(map);
                             handleStatus(clientId, status);
                         }
                     });
