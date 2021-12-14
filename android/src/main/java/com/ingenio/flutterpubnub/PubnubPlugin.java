@@ -664,8 +664,6 @@ public class PubnubPlugin implements MethodCallHandler {
                 .setReconnectionPolicy(PNReconnectionPolicy.LINEAR)
                 .setPublishKey(publishKey)
                 .setSubscribeKey(subscribeKey);
-        final int count = config.getMaximumReconnectionRetries();
-        System.out.println("PubnubPlugin count: " + count);
 
         if (authKey != null && !authKey.isEmpty()) {
             config.setAuthKey(authKey);
