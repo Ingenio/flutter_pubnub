@@ -716,6 +716,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
                                        TIME_TOKEN_KEY: status.data.action.messageTimetoken,
                                        ACTION_TYPE_KEY:status.data.action.type,
                                        ACTION_VALUE_KEY:status.data.action.value,
+                                       MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
                                        ERROR_KEY:status.isError ? status.errorData.information :@"" };
           result(resultData);
           
@@ -1004,7 +1005,7 @@ typedef enum {
             PNSubscribeStatus *subscribeStatus = (PNSubscribeStatus *)status;
             affectedChannels = subscribeStatus.subscribedChannels;
         }
-        
+
       self.eventSink(@{CLIENT_ID_KEY: clientId, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:status.category],STATUS_OPERATION_KEY: [PubnubPlugin getOperationAsNumber:status.operation], UUID_KEY: status.uuid, CHANNELS_KEY: affectedChannels == NULL ? @[] : affectedChannels, STATUS_CODE_KEY: @(status.statusCode), REQUEST_KEY: status.clientRequest.URL.absoluteString});
     }
 }
