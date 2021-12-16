@@ -425,7 +425,8 @@ enum PNOperationType {
   PNRemoveAllPushNotificationsOperation,
   PNTimeOperation,
   PNGetStateOperation,
-  PNSignalOperation
+  PNSignalOperation,
+  PNAddMessageAction
 }
 
 /// Push token type
