@@ -702,10 +702,9 @@ public class PubnubPlugin implements MethodCallHandler {
         }
         try {
             builder.execute();
+        } catch (Exception e) {
+            result.success(false);
         }
-       catch (Exception e) {
-           result.success(false);
-       }
         result.success(true);
     }
 
@@ -789,7 +788,7 @@ public class PubnubPlugin implements MethodCallHandler {
                         put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
                         put(TIME_TOKEN_KEY, pnResult.getTimetoken());
                     }};
-                        result.success(map);
+                    result.success(map);
                     handleStatus(clientId, status);
                 }
             });
@@ -856,20 +855,23 @@ public class PubnubPlugin implements MethodCallHandler {
                     .async(new PNCallback<PNAddMessageActionResult>() {
                         @Override
                         public void onResponse(final PNAddMessageActionResult result, final PNStatus status) {
-
-                            final Map<String, Object> map = new HashMap<String, Object>() {{
-                                put(TIME_TOKEN_KEY, result.getMessageTimetoken());
-                                put(ACTION_TYPE_KEY, result.getType());
-                                put(ACTION_VALUE_KEY, result.getValue());
-                                put(UUID_KEY, status.getUuid());
-                                put(STATUS_CODE, status.getStatusCode());
-                                put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
-                                put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
-                                put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
-                                put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
-                            }};
-                            actionResult.success(map);
-                            handleStatus(clientId, status);
+                            if (status.isError()) {
+                                handleStatus(clientId, status);
+                            } else {
+                                final Map<String, Object> map = new HashMap<String, Object>() {{
+                                    put(TIME_TOKEN_KEY, result.getMessageTimetoken());
+                                    put(ACTION_TYPE_KEY, result.getType());
+                                    put(ACTION_VALUE_KEY, result.getValue());
+                                    put(UUID_KEY, status.getUuid());
+                                    put(STATUS_CODE, status.getStatusCode());
+                                    put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
+                                    put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
+                                    put(MESSAGE_PUBLISHING_STATUS_KEY, !status.isError());
+                                    put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
+                                }};
+                                actionResult.success(map);
+                                statusStreamHandler.sendStatus(clientId, status);
+                            }
                         }
                     });
         }
@@ -976,20 +978,21 @@ public class PubnubPlugin implements MethodCallHandler {
     public static class MessageStreamHandler extends BaseStreamHandler {
 
         void sendMessage(final String clientId, final PNMessageResult message) {
-            send(clientId, message.getPublisher(), message.getChannel(), message.getMessage().toString());
+            send(clientId, message.getPublisher(), message.getChannel(), message.getMessage().toString(), message.getTimetoken());
         }
 
         void sendSignal(final String clientId, final PNSignalResult signal) {
-            send(clientId, signal.getPublisher(), signal.getChannel(), signal.getMessage().toString());
+            send(clientId, signal.getPublisher(), signal.getChannel(), signal.getMessage().toString(), signal.getTimetoken());
         }
 
-        void send(final String clientId, final String publisher, final String channel, final String message) {
+        void send(final String clientId, final String publisher, final String channel, final String message, final long timeToken) {
             if (super.sink != null) {
                 final Map<String, Object> map = new HashMap<String, Object>() {{
                     put(CLIENT_ID_KEY, clientId);
                     put(UUID_KEY, publisher);
                     put(CHANNEL_KEY, channel);
                     put(MESSAGE_KEY, message);
+                    put(TIME_TOKEN_KEY, timeToken);
                 }};
                 executor.execute(new Runnable() {
                     @Override
