@@ -707,20 +707,20 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
         .value(actionValue)
         .performWithCompletion(^(PNAddMessageActionStatus *status) {
           __strong __typeof(self) strongSelf = weakSelf;
-          
-          NSDictionary *resultData = @{
-                                       UUID_KEY: status.uuid,
-                                       STATUS_CODE_KEY: @(status.statusCode),
-                                       MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
-                                       REQUEST_KEY: status.clientRequest.URL.absoluteString,
-                                       TIME_TOKEN_KEY: status.data.action.messageTimetoken,
-                                       ACTION_TYPE_KEY:status.data.action.type,
-                                       ACTION_VALUE_KEY:status.data.action.value,
-                                       MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
-                                       ERROR_KEY:status.isError ? status.errorData.information :@"" };
-          result(resultData);
-          
-          [strongSelf handleStatus:status clientId:clientId];
+            if(!status.isError) {
+                NSDictionary *resultData = @{
+                                             UUID_KEY: status.uuid,
+                                             STATUS_CODE_KEY: @(status.statusCode),
+                                             MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
+                                             REQUEST_KEY: status.clientRequest.URL.absoluteString,
+                                             TIME_TOKEN_KEY: status.data.action.messageTimetoken,
+                                             ACTION_TYPE_KEY:status.data.action.type,
+                                             ACTION_VALUE_KEY:status.data.action.value,
+                                             MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
+                                             ERROR_KEY:status.isError ? status.errorData.information :@"" };
+                result(resultData);
+            }
+            [strongSelf handleStatus:status clientId:clientId];
         });
   }
   
@@ -953,14 +953,14 @@ typedef enum {
 }
 
 - (void) sendMessage:(PNMessageResult *)message clientId:(NSString *)clientId {
-   [self send:clientId uuid:message.uuid channel:message.data.channel message:message.data.message];
+    [self send:clientId uuid:message.uuid channel:message.data.channel message:message.data.message timeToken:message.data.timetoken];
 }
 
 - (void) sendSignal:(PNSignalResult *)signal clientId:(NSString *)clientId {
-    [self send:clientId uuid:signal.uuid channel:signal.data.channel message:signal.data.message];
+    [self send:clientId uuid:signal.uuid channel:signal.data.channel message:signal.data.message timeToken:signal.data.timetoken];
 }
 
-- (void) send:(NSString *)clientId uuid:(NSString *)uuid channel:(NSString *)channel  message: (id)message {
+- (void) send:(NSString *)clientId uuid:(NSString *)uuid channel:(NSString *)channel message: (id)message timeToken:(NSNumber *)timeToken {
     if(self.eventSink) {
         
         NSString *jsonString = @"";
@@ -976,7 +976,7 @@ typedef enum {
             }
         }
         
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: uuid, CHANNEL_KEY: channel, MESSAGE_KEY: jsonString};
+        NSDictionary * result = @{CLIENT_ID_KEY: clientId, UUID_KEY: uuid, CHANNEL_KEY: channel, MESSAGE_KEY: jsonString, TIME_TOKEN_KEY: timeToken};
 
         self.eventSink(result);
     }
@@ -1069,7 +1069,7 @@ typedef enum {
   
   if(self.eventSink) {
       NSLog(@"Action Type: %@ Action Value: %@ TimeToken: %@", action.data.action.type, action.data.action.value, action.data.timetoken);
-    self.eventSink(@{CLIENT_ID_KEY: clientId, TIME_TOKEN_KEY: action.data.timetoken, ACTION_TYPE_KEY: action.data.action.type, ACTION_VALUE_KEY: action.data.action.value, CHANNEL_KEY: action.data.channel});
+    self.eventSink(@{CLIENT_ID_KEY: clientId, TIME_TOKEN_KEY: action.data.action.messageTimetoken, ACTION_TYPE_KEY: action.data.action.type, ACTION_VALUE_KEY: action.data.action.value, CHANNEL_KEY: action.data.channel});
   }
 }
 
