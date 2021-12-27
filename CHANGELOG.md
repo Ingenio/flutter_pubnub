@@ -54,3 +54,9 @@
 ## [0.5.0]
 
 * Updated to iOS PubNub 4.13.1
+
+## [1.0.0]
+
+* Updated to null safety
+* Added message actions
+* Bug fixes and other improvements
