@@ -639,7 +639,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
                                              STATUS_CODE_KEY: @(status.statusCode),
                                              MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
                                              REQUEST_KEY: status.clientRequest.URL.absoluteString,
-                                             TIME_TOKEN_KEY: status.data.timetoken,
+                                             TIME_TOKEN_KEY: status.isError ? [NSNull null] : status.data.timetoken,
                                              ERROR_KEY:status.isError ? status.errorData.information :@"" };
                 result(resultData);
             [strongSelf handleStatus:status clientId:clientId];

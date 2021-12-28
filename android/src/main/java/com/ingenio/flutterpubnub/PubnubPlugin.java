@@ -786,7 +786,7 @@ public class PubnubPlugin implements MethodCallHandler {
                         put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
                         put(REQUEST_KEY, status.getClientRequest() == null ? null : status.getClientRequest().toString());
                         put(ERROR_KEY, status.isError() ? status.getErrorData().toString() : "");
-                        put(TIME_TOKEN_KEY, pnResult.getTimetoken());
+                        put(TIME_TOKEN_KEY, status.isError() ? null : pnResult.getTimetoken());
                     }};
                     result.success(map);
                     handleStatus(clientId, status);
