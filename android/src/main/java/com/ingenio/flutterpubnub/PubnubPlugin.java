@@ -855,13 +855,10 @@ public class PubnubPlugin implements MethodCallHandler {
                     .async(new PNCallback<PNAddMessageActionResult>() {
                         @Override
                         public void onResponse(final PNAddMessageActionResult result, final PNStatus status) {
-                            if (status.isError()) {
-                                handleStatus(clientId, status);
-                            } else {
                                 final Map<String, Object> map = new HashMap<String, Object>() {{
-                                    put(TIME_TOKEN_KEY, result.getMessageTimetoken());
-                                    put(ACTION_TYPE_KEY, result.getType());
-                                    put(ACTION_VALUE_KEY, result.getValue());
+                                    put(TIME_TOKEN_KEY,  status.isError() ? null : result.getMessageTimetoken());
+                                    put(ACTION_TYPE_KEY, status.isError() ? null : result.getType());
+                                    put(ACTION_VALUE_KEY, status.isError() ? null : result.getValue());
                                     put(UUID_KEY, status.getUuid());
                                     put(STATUS_CODE, status.getStatusCode());
                                     put(MESSAGE_PUBLISHING_CHANNELS_KEY, status.getAffectedChannels());
@@ -871,7 +868,6 @@ public class PubnubPlugin implements MethodCallHandler {
                                 }};
                                 actionResult.success(map);
                                 statusStreamHandler.sendStatus(clientId, status);
-                            }
                         }
                     });
         }

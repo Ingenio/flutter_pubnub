@@ -707,20 +707,18 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
         .value(actionValue)
         .performWithCompletion(^(PNAddMessageActionStatus *status) {
           __strong __typeof(self) strongSelf = weakSelf;
-            if(!status.isError) {
                 NSDictionary *resultData = @{
                                              UUID_KEY: status.uuid,
                                              STATUS_CODE_KEY: @(status.statusCode),
                                              MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
-                                             REQUEST_KEY: status.clientRequest.URL.absoluteString,
-                                             TIME_TOKEN_KEY: status.data.action.messageTimetoken,
-                                             ACTION_TYPE_KEY:status.data.action.type,
-                                             ACTION_VALUE_KEY:status.data.action.value,
+                                             REQUEST_KEY: status.isError ? [NSNull null] : status.clientRequest.URL.absoluteString,
+                                             TIME_TOKEN_KEY: status.isError ? [NSNull null] : status.data.action.messageTimetoken,
+                                             ACTION_TYPE_KEY:status.isError ? [NSNull null] : status.data.action.type,
+                                             ACTION_VALUE_KEY:status.isError ? [NSNull null] : status.data.action.value,
                                              MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
                                              ERROR_KEY:status.isError ? status.errorData.information :@"" };
                 result(resultData);
-            }
-            [strongSelf handleStatus:status clientId:clientId];
+                [self.statusStreamHandler sendStatus:status clientId:clientId];
         });
   }
   
