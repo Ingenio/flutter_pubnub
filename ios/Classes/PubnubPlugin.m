@@ -12,6 +12,7 @@ NSString *const PUBNUB_MESSAGE_CHANNEL_NAME = @"flutter.ingenio.com/pubnub_messa
 NSString *const PUBNUB_STATUS_CHANNEL_NAME = @"flutter.ingenio.com/pubnub_status";
 NSString *const PUBNUB_PRESENCE_CHANNEL_NAME = @"flutter.ingenio.com/pubnub_presence";
 NSString *const PUBNUB_ERROR_CHANNEL_NAME = @"flutter.ingenio.com/pubnub_error";
+NSString *const PUBNUB_MESSAGE_ACTION_CHANNEL_NAME = @"flutter.ingenio.com/message_action";
 
 NSString *const SUBSCRIBE_METHOD = @"subscribe";
 NSString *const PUBLISH_METHOD = @"publish";
@@ -19,6 +20,7 @@ NSString *const PRESENCE_METHOD = @"presence";
 NSString *const UNSUBSCRIBE_METHOD = @"unsubscribe";
 NSString *const DISPOSE_METHOD = @"dispose";
 NSString *const UUID_METHOD = @"uuid";
+NSString *const RECONNECT_METHOD = @"reconnect";
 
 NSString *const ADD_CHANNELS_TO_CHANNEL_GROUP_METHOD = @"addChannelsToChannelGroup";
 NSString *const LIST_CHANNELS_FOR_CHANNEL_GROUP_METHOD = @"listChannelsForChannelGroup";
@@ -32,6 +34,7 @@ NSString *const LIST_PUSH_NOTIFICATION_CHANNELS_METHOD = @"listPushNotificationC
 NSString *const REMOVE_PUSH_NOTIFICATIONS_FROM_CHANNELS_METHOD = @"removePushNotificationsFromChannels";
 NSString *const REMOVE_ALL_PUSH_NOTIFICATIONS_FROM_DEVICE_AITH_PUSH_TOKEN_METHOD = @"removeAllPushNotificationsFromDeviceWithPushToken";
 NSString *const SIGNAL_METHOD = @"signal";
+NSString *const ADD_MESSAGE_ACTION_METHOD = @"addMessageAction";
 
 NSString *const CLIENT_ID_KEY = @"clientId";
 NSString *const CHANNELS_KEY = @"channels";
@@ -58,6 +61,16 @@ NSString *const START_KEY = @"start";
 NSString *const END_KEY = @"end";
 NSString *const PUSH_TYPE_KEY = @"pushType";
 NSString *const PUSH_TOKEN_KEY = @"pushToken";
+NSString *const ERROR_INFO_KEY = @"information";
+NSString *const RESTORE = @"restore";
+NSString *const MESSAGE_PUBLISHING_STATUS_KEY = @"isPublished";
+NSString *const STATUS_CODE_KEY = @"statusCode";
+NSString *const MESSAGE_PUBLISHING_CHANNELS_KEY = @"affectedChannels";
+NSString *const REQUEST_KEY = @"request";
+NSString *const WITH_PRESENCE_KEY = @"withPresence";
+NSString *const TIME_TOKEN_KEY = @"timeToken";
+NSString *const ACTION_TYPE_KEY = @"actionType";
+NSString *const ACTION_VALUE_KEY = @"actionValue";
 
 NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
@@ -71,6 +84,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     instance.statusStreamHandler = [StatusStreamHandler new];
     instance.presenceStreamHandler = [PresenceStreamHandler new];
     instance.errorStreamHandler = [ErrorStreamHandler new];
+    instance.messageActionStreamHandler = [MessageActionStreamHandler new];
     
     [registrar addMethodCallDelegate:instance channel:channel];
     
@@ -86,6 +100,9 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     [[FlutterEventChannel eventChannelWithName:PUBNUB_ERROR_CHANNEL_NAME
                                binaryMessenger:[registrar messenger]] setStreamHandler:instance.errorStreamHandler];
+  
+    [[FlutterEventChannel eventChannelWithName:PUBNUB_MESSAGE_ACTION_CHANNEL_NAME
+                             binaryMessenger:[registrar messenger]] setStreamHandler:instance.messageActionStreamHandler];
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
@@ -129,6 +146,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
             [self handleRemoveAllPushNotificationsFromDeviceWithPushToken:call clientId:clientId result:result];
         } else if  ([SIGNAL_METHOD isEqualToString:call.method]) {
             [self handleSignal:call clientId:clientId result:result];
+        } else if ([RECONNECT_METHOD isEqualToString:call.method]) {
+            [self handleReconnect:call clientId:clientId result:result];
+        } else if ([ADD_MESSAGE_ACTION_METHOD isEqualToString:call.method]) {
+          [self handleAddMessageAction:call clientId:clientId result:result];
         }
         
         else {
@@ -157,7 +178,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     NSLog(@"FlutterPubnubPlugin createClient clientId: %@ method: %@", clientId, call.method);
     
     PNConfiguration *config = [self configFromCall:call];
-    
+
     PubNub *client = [PubNub clientWithConfiguration:config];
     
     NSString *filter = call.arguments[FILTER_KEY];
@@ -192,6 +213,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     id presenceTimeout = call.arguments[PRESENCE_TIMEOUT_KEY];
     id uuid = call.arguments[UUID_KEY];
     
+    id restore = call.arguments[RESTORE];
     
     config =
     [PNConfiguration configurationWithPublishKey:publishKey
@@ -201,6 +223,13 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     if(uuid != [NSNull null]) {
         NSLog(@"configFromCall: setting uuid");
         config.uuid = uuid;
+    }
+    
+
+  
+    if(restore != [NSNull null]) {
+        NSLog(@"configFromCall: setting restore: %d", [restore boolValue]);
+       config.catchUpOnSubscriptionRestore = [restore boolValue];
     }
     
     if(authKey != [NSNull null]) {
@@ -526,6 +555,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 
 - (void) handleSubscribeToChannelGroups:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channelGroups = call.arguments[CHANNEL_GROUPS_KEY];
+    bool withPresence = [call.arguments[WITH_PRESENCE_KEY] boolValue];
     
     if((id)channelGroups == [NSNull null] || channelGroups == NULL || [channelGroups count] == 0) {
         @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Channel groups can't be null or empty"userInfo:nil];
@@ -533,7 +563,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     PubNub *client = [self getClient:clientId call:call];
     
-    [client subscribeToChannelGroups:channelGroups withPresence:YES];
+    [client subscribeToChannelGroups:channelGroups withPresence:withPresence];
     
     result(NULL);
 }
@@ -559,7 +589,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
         NSLog(@"Unsubscribing from channels: %@", channels);
-        [client unsubscribeFromChannels:channels withPresence:NO];
+        [client unsubscribeFromChannels:channels withPresence:YES];
     } else {
         NSLog(@"Unsubscribing ALL Channels");
         [client unsubscribeFromAll];
@@ -602,11 +632,19 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     for(NSString *channel in channels) {
         [client publish:message toChannel:channel withMetadata:metadata completion:^(PNPublishStatus *status) {
             __strong __typeof(self) strongSelf = weakSelf;
+                NSDictionary *resultData = @{MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
+                                             ERROR_OPERATION_KEY:[PubnubPlugin getOperationAsNumber:status.operation],
+                                             STATUS_CATEGORY_KEY:[PubnubPlugin getCategoryAsNumber:status.category],
+                                             UUID_KEY: status.uuid,
+                                             STATUS_CODE_KEY: @(status.statusCode),
+                                             MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
+                                             REQUEST_KEY: status.clientRequest.URL.absoluteString,
+                                             TIME_TOKEN_KEY: status.isError ? [NSNull null] : status.data.timetoken,
+                                             ERROR_KEY:status.isError ? status.errorData.information :@"" };
+                result(resultData);
             [strongSelf handleStatus:status clientId:clientId];
         }];
     }
-    
-    result(NULL);
 }
 
 - (void) handleSignal:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
@@ -635,6 +673,57 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     result(NULL);
 }
 
+- (void) handleAddMessageAction:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+  NSString *actionType = call.arguments[ACTION_TYPE_KEY];
+  NSString *actionValue = call.arguments[ACTION_VALUE_KEY];
+  NSNumber *timeToken = call.arguments[TIME_TOKEN_KEY];
+  NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+  
+  if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
+      @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Presence channels can't be null or empty" userInfo:nil];
+  }
+  
+  if((id)actionType == [NSNull null] || actionType == NULL || actionType.length == 0) {
+      @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Action Type can't be null or empty" userInfo:nil];
+  }
+  
+  if((id)actionValue == [NSNull null] || actionValue == NULL || actionValue.length == 0) {
+      @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Action Value can't be null or empty" userInfo:nil];
+  }
+  
+  if((id)timeToken == [NSNull null] || timeToken == NULL) {
+      @throw [[MissingArgumentException alloc] initWithName:MISSING_ARGUMENT_EXCEPTION reason:@"Time token can't be null" userInfo:nil];
+  }
+  
+  PubNub *client = [self getClient:clientId call:call];
+  
+  __weak __typeof(self) weakSelf = self;
+  
+  for(NSString *channel in channels) {
+    client.addMessageAction()
+        .channel(channel)
+        .messageTimetoken(timeToken)
+        .type(actionType)
+        .value(actionValue)
+        .performWithCompletion(^(PNAddMessageActionStatus *status) {
+          __strong __typeof(self) strongSelf = weakSelf;
+                NSDictionary *resultData = @{
+                                             UUID_KEY: status.uuid,
+                                             STATUS_CODE_KEY: @(status.statusCode),
+                                             MESSAGE_PUBLISHING_CHANNELS_KEY: [NSArray array],
+                                             REQUEST_KEY: status.isError ? [NSNull null] : status.clientRequest.URL.absoluteString,
+                                             TIME_TOKEN_KEY: status.isError ? [NSNull null] : status.data.action.messageTimetoken,
+                                             ACTION_TYPE_KEY:status.isError ? [NSNull null] : status.data.action.type,
+                                             ACTION_VALUE_KEY:status.isError ? [NSNull null] : status.data.action.value,
+                                             MESSAGE_PUBLISHING_STATUS_KEY:status.isError ? @(NO) : @(YES),
+                                             ERROR_KEY:status.isError ? status.errorData.information :@"" };
+                result(resultData);
+                [self.statusStreamHandler sendStatus:status clientId:clientId];
+        });
+  }
+  
+}
+
 - (void) handlePresence:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
     NSDictionary<NSString*, NSString*> *state = call.arguments[STATE_KEY];
@@ -654,7 +743,10 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
           withCompletion:^(PNClientStateUpdateStatus *status) {
             
             if (status.isError) {
-                NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+              PNErrorStatus *errorStatus = (PNErrorStatus *)status;
+              PNErrorData *errorData = errorStatus.errorData;
+              
+              NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @"cannot deserialize 1", STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], ERROR_INFO_KEY: errorData.information};
                 [self.errorStreamHandler sendError:result];
             } else {
                 [self.statusStreamHandler sendStatus:status clientId:clientId];
@@ -666,6 +758,7 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
 }
 - (void) handleSubscribe:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
     NSArray<NSString *> *channels = call.arguments[CHANNELS_KEY];
+    bool withPresence = [call.arguments[WITH_PRESENCE_KEY] boolValue];
     
     NSLog(@"Subscribe: %@", channels);
     if((id)channels == [NSNull null] || channels == NULL || [channels count] == 0) {
@@ -675,16 +768,24 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
     
     PubNub *client = [self getClient:clientId call:call];
     
-    [client subscribeToChannels:channels withPresence:YES];
+    [client subscribeToChannels:channels withPresence:withPresence];
     
     result(NULL);
 }
 
+- (void) handleReconnect:(FlutterMethodCall*)call clientId:(NSString *)clientId result:(FlutterResult)result {
+    NSLog(@"Reconnect client: %@", clientId);
+    [self handleSubscribe:call clientId:clientId result:result];
+}
+
+
 - (void)handleStatus:(PNStatus *)status clientId:(NSString *)clientId {
-    if (status.isError) {
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:status.operation], ERROR_KEY: @""};
+  if (status.isError && [status isMemberOfClass:PNErrorStatus.class]) {
+    PNErrorStatus *errorStatus = (PNErrorStatus *)status;
+    PNErrorData *errorData = errorStatus.errorData;
+    
+      NSDictionary *result = @{CLIENT_ID_KEY: clientId, ERROR_OPERATION_KEY:  [PubnubPlugin getOperationAsNumber:errorStatus.operation], STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:errorStatus.category], UUID_KEY: status.uuid, STATUS_CODE_KEY: @(status.statusCode), REQUEST_KEY: status.clientRequest.URL.absoluteString, ERROR_KEY: @"cannot deserialize 2", ERROR_INFO_KEY: errorData.information};
         [self.errorStreamHandler sendError:result];
-        
     } else {
         [self.statusStreamHandler sendStatus:status clientId:clientId];
     }
@@ -696,6 +797,11 @@ NSString *const MISSING_ARGUMENT_EXCEPTION = @"Missing Argument Exception";
         return matches[0];
     }
     return NULL;
+}
+
+- (void)client:(PubNub *)client didReceiveMessageAction:(PNMessageActionResult *)action {
+  NSLog(@"ClientCallback didReceiveMessageAction");
+  [self.messageActionStreamHandler sendMessageAction:action clientId:[self getClientId:client]];
 }
 
 - (void)client:(PubNub *)client didReceiveStatus:(PNStatus *)status {
@@ -823,6 +929,8 @@ typedef enum {
             return [NSNumber numberWithInt:19];
         case PNSignalOperation:
             return [NSNumber numberWithInt:21];
+      case PNAddMessageActionOperation:
+            return  [NSNumber numberWithInt:22];
         default:
             return [NSNumber numberWithInt:0];
     }
@@ -843,14 +951,14 @@ typedef enum {
 }
 
 - (void) sendMessage:(PNMessageResult *)message clientId:(NSString *)clientId {
-   [self send:clientId uuid:message.uuid channel:message.data.channel message:message.data.message];
+    [self send:clientId uuid:message.uuid channel:message.data.channel message:message.data.message timeToken:message.data.timetoken];
 }
 
 - (void) sendSignal:(PNSignalResult *)signal clientId:(NSString *)clientId {
-    [self send:clientId uuid:signal.uuid channel:signal.data.channel message:signal.data.message];
+    [self send:clientId uuid:signal.uuid channel:signal.data.channel message:signal.data.message timeToken:signal.data.timetoken];
 }
 
-- (void) send:(NSString *)clientId uuid:(NSString *)uuid channel:(NSString *)channel  message: (id)message {
+- (void) send:(NSString *)clientId uuid:(NSString *)uuid channel:(NSString *)channel message: (id)message timeToken:(NSNumber *)timeToken {
     if(self.eventSink) {
         
         NSString *jsonString = @"";
@@ -866,7 +974,7 @@ typedef enum {
             }
         }
         
-        NSDictionary *result = @{CLIENT_ID_KEY: clientId, UUID_KEY: uuid, CHANNEL_KEY: channel, MESSAGE_KEY: jsonString};
+        NSDictionary * result = @{CLIENT_ID_KEY: clientId, UUID_KEY: uuid, CHANNEL_KEY: channel, MESSAGE_KEY: jsonString, TIME_TOKEN_KEY: timeToken};
 
         self.eventSink(result);
     }
@@ -895,8 +1003,8 @@ typedef enum {
             PNSubscribeStatus *subscribeStatus = (PNSubscribeStatus *)status;
             affectedChannels = subscribeStatus.subscribedChannels;
         }
-        
-        self.eventSink(@{CLIENT_ID_KEY: clientId, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:status.category],STATUS_OPERATION_KEY: [PubnubPlugin getOperationAsNumber:status.operation], UUID_KEY: status.uuid, CHANNELS_KEY: affectedChannels == NULL ? @[] : affectedChannels});
+
+      self.eventSink(@{CLIENT_ID_KEY: clientId, STATUS_CATEGORY_KEY: [PubnubPlugin getCategoryAsNumber:status.category],STATUS_OPERATION_KEY: [PubnubPlugin getOperationAsNumber:status.operation], UUID_KEY: status.uuid, CHANNELS_KEY: affectedChannels == NULL ? @[] : affectedChannels, STATUS_CODE_KEY: @(status.statusCode), REQUEST_KEY: status.clientRequest.URL.absoluteString});
     }
 }
 
@@ -939,6 +1047,28 @@ typedef enum {
     if(self.eventSink) {
         self.eventSink(error);
     }
+}
+
+@end
+
+@implementation MessageActionStreamHandler
+
+- (FlutterError*)onListenWithArguments:(id)arguments eventSink:(FlutterEventSink)eventSink {
+    self.eventSink = eventSink;
+    return nil;
+}
+
+- (FlutterError*)onCancelWithArguments:(id)arguments {
+    self.eventSink = nil;
+    return nil;
+}
+
+- (void) sendMessageAction:(PNMessageActionResult *)action clientId:(NSString *)clientId {
+  
+  if(self.eventSink) {
+      NSLog(@"Action Type: %@ Action Value: %@ TimeToken: %@", action.data.action.type, action.data.action.value, action.data.timetoken);
+    self.eventSink(@{CLIENT_ID_KEY: clientId, TIME_TOKEN_KEY: action.data.action.messageTimetoken, ACTION_TYPE_KEY: action.data.action.type, ACTION_VALUE_KEY: action.data.action.value, CHANNEL_KEY: action.data.channel});
+  }
 }
 
 @end

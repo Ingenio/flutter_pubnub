@@ -13,17 +13,23 @@ class PubNubConfig {
   static final _presenceTimeoutKey = 'presenceTimeout';
   static final _uuidKey = 'uuid';
   static final _filterKey = 'filter';
+  static final _restore = 'restore';
   static final _uuid = Uuid();
 
   PubNubConfig(this.publishKey, this.subscribeKey,
-      {this.authKey, this.presenceTimeout, this.uuid, this.filter});
+      {this.authKey,
+      this.presenceTimeout,
+      this.uuid,
+      this.filter,
+      this.restore = false});
 
   final String publishKey;
   final String subscribeKey;
-  final String authKey;
-  final int presenceTimeout;
-  final String uuid;
-  final String filter;
+  final String? authKey;
+  final int? presenceTimeout;
+  final String? uuid;
+  final bool restore;
+  final String? filter;
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> args = {
@@ -33,6 +39,7 @@ class PubNubConfig {
       _uuidKey: uuid,
       _filterKey: filter,
       _authKey: authKey,
+      _restore: restore,
     };
 
     if (presenceTimeout != null) {
@@ -50,6 +57,7 @@ class PubNub {
   static const _statusChannelName = 'flutter.ingenio.com/pubnub_status';
   static const _presenceChannelName = 'flutter.ingenio.com/pubnub_presence';
   static const _errorChannelName = 'flutter.ingenio.com/pubnub_error';
+  static const _messageActionChannelName = 'flutter.ingenio.com/message_action';
 
   //  Methods Names
   static const _subscribeMethod = 'subscribe';
@@ -58,6 +66,7 @@ class PubNub {
   static const _unsubscribeMethod = 'unsubscribe';
   static const _disposeMethod = 'dispose';
   static const _uuidMethod = 'uuid';
+  static const _reconnectMethod = 'reconnect';
   static const _addChannelsToChannelGroupMethod = 'addChannelsToChannelGroup';
   static const _listChannelsForChannelGroupMethod =
       'listChannelsForChannelGroup';
@@ -78,6 +87,8 @@ class PubNub {
       'removeAllPushNotificationsFromDeviceWithPushToken';
   static const _signal = 'signal';
 
+  static const _addMessageActionMethod = 'addMessageAction';
+
   // Arguments keys
   static const _channelKey = 'channel';
   static const _channelsKey = 'channels';
@@ -91,10 +102,15 @@ class PubNub {
   static const _endKey = 'end';
   static const _pushTypeKey = 'pushType';
   static const _pushTokenKey = 'pushToken';
+  static const _withPresenceKey = 'withPresence';
 
   static const _statusCategoryKey = 'category';
   static const _statusOperationKey = 'operation';
   static const _errorOperationKey = 'operation';
+
+  static const _timeTokenKey = "timeToken";
+  static const _actionTypeKey = "actionType";
+  static const _actionValueKey = "actionValue";
 
   static final MethodChannel _channel = const MethodChannel(_methodChannelName);
 
@@ -108,6 +124,8 @@ class PubNub {
       const EventChannel(_presenceChannelName).receiveBroadcastStream();
   static final _errorChannelStream =
       const EventChannel(_errorChannelName).receiveBroadcastStream();
+  static final _messageActionChannelStream =
+      const EventChannel(_messageActionChannelName).receiveBroadcastStream();
 
   /// Create the plugin, UUID and filter expressions are optional and can be used for tracking purposes and filtering purposes, for instance can disable getting messages on the same UUID.
   PubNub(PubNubConfig config) : this.config = config.toMap() {
@@ -118,7 +136,7 @@ class PubNub {
 
   Future<dynamic> _invokeMethod(
     String method, [
-    Map<dynamic, dynamic> arguments,
+    Map<dynamic, dynamic>? arguments,
   ]) {
     arguments ??= <dynamic, dynamic>{};
     arguments.addAll(config);
@@ -126,8 +144,19 @@ class PubNub {
   }
 
   /// Subscribe to a list of channels
-  Future<void> subscribe(List<String> channels) async {
-    return await _invokeMethod(_subscribeMethod, {_channelsKey: channels});
+  Future<void> subscribe(
+    List<String> channels, {
+    bool withPresence = false,
+  }) async {
+    return await _invokeMethod(_subscribeMethod, {
+      _channelsKey: channels,
+      _withPresenceKey: withPresence,
+    });
+  }
+
+  /// Reconnect client
+  Future<void> reconnect() async {
+    return await _invokeMethod(_reconnectMethod);
   }
 
   /// Set Presence State on a specified channel
@@ -138,8 +167,8 @@ class PubNub {
   }
 
   /// Publishes a message on a specified channel, some metadata can be passed and used in conjunction with filter expressions
-  Future<void> publish(List<String> channels, Map message,
-      {Map metadata}) async {
+  Future<Map> publish(List<String> channels, Map message,
+      {Map? metadata}) async {
     Map args = {_messageKey: message, _channelsKey: channels};
 
     if (metadata != null) {
@@ -147,6 +176,19 @@ class PubNub {
     }
 
     return await _invokeMethod(_publishMethod, args);
+  }
+
+  // Adds actions to an existing message. Note: the timeToken is returned on a publish message
+  // and is used as a unique message identifier
+  Future<Map> addMessageAction(List<String> channels, int timeToken,
+      String actionType, String actionValue) async {
+    Map args = {
+      _timeTokenKey: timeToken,
+      _actionTypeKey: actionType,
+      _actionValueKey: actionValue,
+      _channelsKey: channels
+    };
+    return await _invokeMethod(_addMessageActionMethod, args);
   }
 
   /// Sends a signal to all subscribers of channels. 30 bytes max.
@@ -181,7 +223,8 @@ class PubNub {
   // New: https://www.pubnub.com/docs/android-java/api-reference-channel-groups#removing-channels-args-1
 
   ///  Lists all the channels of the channel group.
-  Future<List> history(String channel, int limit, {int start, int end}) async {
+  Future<List> history(String channel, int limit,
+      {int? start, int? end}) async {
     return await _invokeMethod(_historyMethod, {
       _channelKey: channel,
       _limitKey: limit,
@@ -217,9 +260,12 @@ class PubNub {
   }
 
   /// Subscribe to a list of channels
-  Future<void> subscribeToChannelGroups(List<String> channelGroups) async {
-    return await _invokeMethod(
-        _subscribeToChannelGroupsMethod, {_channelGroupsKey: channelGroups});
+  Future<void> subscribeToChannelGroups(List<String> channelGroups,
+      {bool withPresence = false}) async {
+    return await _invokeMethod(_subscribeToChannelGroupsMethod, {
+      _channelGroupsKey: channelGroups,
+      _withPresenceKey: withPresence,
+    });
   }
 
   /// Subscribe to a list of channels
@@ -296,6 +342,13 @@ class PubNub {
         .map((dynamic event) => _parseError(event));
   }
 
+  /// Fires whenever message action is received.
+  Stream<Map> get onMessageActionReceived {
+    return _messageActionChannelStream
+        .where(_clientFilter)
+        .map((dynamic event) => _parseMessageAction(event));
+  }
+
   /// Fires whenever a status is received.
   Map _parseStatus(Map status) {
     status[_statusCategoryKey] = PNStatusCategory.values[
@@ -321,6 +374,10 @@ class PubNub {
   /// Fires whenever a message is received
   Map _parseMessage(Map message) {
     return message;
+  }
+
+  Map _parseMessageAction(Map messageAction) {
+    return messageAction;
   }
 }
 
@@ -368,7 +425,8 @@ enum PNOperationType {
   PNRemoveAllPushNotificationsOperation,
   PNTimeOperation,
   PNGetStateOperation,
-  PNSignalOperation
+  PNSignalOperation,
+  PNAddMessageAction
 }
 
 /// Push token type
